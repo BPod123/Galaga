@@ -1,3 +1,7 @@
+/**
+ * @author Ben Podrazhansky
+ * @date 3/25/2020
+ * */
 #ifndef GBA_H
 #define GBA_H
 
@@ -43,6 +47,7 @@ extern volatile unsigned short *videoBuffer;
 // ---------------------------------------------------------------------------
 //                       BUTTON INPUT
 // ---------------------------------------------------------------------------
+/*
 #define BUTTON_A		(1<<0)
 #define BUTTON_B		(1<<1)
 #define BUTTON_SELECT	(1<<2)
@@ -53,15 +58,30 @@ extern volatile unsigned short *videoBuffer;
 #define BUTTON_DOWN		(1<<7)
 #define BUTTON_R		(1<<8)
 #define BUTTON_L		(1<<9)
-
+*/
 #define BUTTONS *(volatile u32 *) 0x4000130
 #define KEY_DOWN(key, buttons) (~(buttons) & (key))
+#define BUTTON_A		(0)
+#define BUTTON_B		(1)
+#define BUTTON_SELECT	(2)
+#define BUTTON_START	(3)
+#define BUTTON_RIGHT	(4)
+#define BUTTON_LEFT		(5)
+#define BUTTON_UP		(6)
+#define BUTTON_DOWN		(7)
+#define BUTTON_R		(8)
+#define BUTTON_L		(9)
 
-// TODO: COMPLETE THIS MACRO.
+#define KEY_DOWN_NOW(key)  (~(BUTTONS) & (1<<key))
+
+// TODO: COMPLETE THIS MACRO. // DONE
 // Remember that a button is recently pressed if it wasn't pressed in the last
 // input (oldButtons) but is pressed in the current input. Use the KEY_DOWN
 // macro to check if the button was pressed in the inputs.
-#define KEY_JUST_PRESSED(key, buttons, oldbuttons)
+#define KEY_JUST_PRESSED(key, buttons, oldbuttons) ((KEY_DOWN(key, buttons) & ~(KEY_DOWN(key, oldbuttons))))
+
+// This one is mine
+#define KEY_JUST_RELEASED(key, button, oldbuttons) ((~(KEY_DOWN(key, buttons)) & (KEY_DOWN(key, oldbuttons))))
 
 // ---------------------------------------------------------------------------
 //                       DMA
@@ -142,6 +162,7 @@ void fillScreenDMA(volatile u16 color);
 void drawChar(int row, int col, char ch, u16 color);
 void drawString(int row, int col, char *str, u16 color);
 void drawCenteredString(int row, int col, int width, int height, char *str, u16 color);
+
 
 /** Contains the pixels of each character from a 6x8 font */
 // This is in the font.c file. You can replace the font if you want.
