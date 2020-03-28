@@ -2,10 +2,13 @@
 #define SHIP_H
 #include "game.h"
 #include "level.h"
-#define SHIP_WIDTH PLAYERSHIP_UP_WIDTH
-#define SHIP_HEIGHT PLAYERSHIP_UP_HEIGHT
-const u16 *getImage(Ship *ship, Direction direction);
+ShipType getRandomEnemy(void);
+extern const int SHIP_WIDTH;
+extern const int SHIP_HEIGHT;
+void drawShip(Ship *ship, Direction direction);
+int hasCollided(Ship *s1, Ship *s2);
+void eraseShip(Ship *ship);
 int getWidth(Ship *ship);
 int getHeight(Ship *ship);
-ShipType getRandomEnemy(void);
+const u16 *getImage(Ship *ship, Direction direction);
 #endif

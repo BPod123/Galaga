@@ -47,7 +47,7 @@ extern volatile unsigned short *videoBuffer;
 // ---------------------------------------------------------------------------
 //                       BUTTON INPUT
 // ---------------------------------------------------------------------------
-/*
+
 #define BUTTON_A		(1<<0)
 #define BUTTON_B		(1<<1)
 #define BUTTON_SELECT	(1<<2)
@@ -58,21 +58,21 @@ extern volatile unsigned short *videoBuffer;
 #define BUTTON_DOWN		(1<<7)
 #define BUTTON_R		(1<<8)
 #define BUTTON_L		(1<<9)
-*/
-#define BUTTONS *(volatile u32 *) 0x4000130
-#define KEY_DOWN(key, buttons) (~(buttons) & (key))
-#define BUTTON_A		(0)
-#define BUTTON_B		(1)
-#define BUTTON_SELECT	(2)
-#define BUTTON_START	(3)
-#define BUTTON_RIGHT	(4)
-#define BUTTON_LEFT		(5)
-#define BUTTON_UP		(6)
-#define BUTTON_DOWN		(7)
-#define BUTTON_R		(8)
-#define BUTTON_L		(9)
 
-#define KEY_DOWN_NOW(key)  (~(BUTTONS) & (1<<key))
+#define BUTTONS *(volatile u32 *) 0x4000130
+// #define KEY_DOWN(key, buttons) (~(buttons) & (key))
+// #define BUTTON_A		(0)
+// #define BUTTON_B		(1)
+// #define BUTTON_SELECT	(2)
+// #define BUTTON_START	(3)
+// #define BUTTON_RIGHT	(4)
+// #define BUTTON_LEFT		(5)
+// #define BUTTON_UP		(6)
+// #define BUTTON_DOWN		(7)
+// #define BUTTON_R		(8)
+// #define BUTTON_L		(9)
+#define KEY_DOWN(key, buttons) (~(buttons) & (key))
+#define KEY_DOWN_NOW(key)  (~(BUTTONS) & (key))
 
 // TODO: COMPLETE THIS MACRO. // DONE
 // Remember that a button is recently pressed if it wasn't pressed in the last
