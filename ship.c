@@ -69,7 +69,7 @@ ShipType getRandomEnemy(void)
     }
 }
 
-
+ 
 void drawShip(Ship *ship, Direction direction)
 {
     drawImageDMA(ship->cords.row, ship->cords.col, getWidth(ship), getHeight(ship), getImage(ship, direction));
