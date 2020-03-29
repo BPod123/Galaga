@@ -21,6 +21,8 @@ extern Ship *missiles[MAX_MISSILES];
 extern Ship *floatTracker;
 extern int numEnemies;
 extern int numAttackers;
+extern int floatRadiusX;
+extern int levelCounter;
 void makeLevel(Game *game);
 void deconstructLevel(void);
 void drawLevel(void);

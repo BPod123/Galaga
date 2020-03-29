@@ -24,6 +24,8 @@ Ship *player;
 Ship *missiles[MAX_MISSILES];
 /** An invisible ship that is always floating. It is used to keep all of the enemies floating in the same direction at the same time */
 Ship *floatTracker;
+int levelCounter;
+int floatRadiusX;
 Game *game;
 /** The number of enemies in the current level, set in the level functions (levelOne(), levelTwo(), ...) */
 int numEnemies;
@@ -31,7 +33,7 @@ int numEnemies;
 int numAttackers;
 void makeLevel(Game *gameIn)
 {
-
+    levelCounter = 0;
     game = &(*gameIn);
     // * Place Player
     player = malloc(sizeof(Ship));
@@ -56,7 +58,7 @@ void makeLevel(Game *gameIn)
     // Set the float path for floatTracker and by extension, all ships that float
     // * Make float Tracker
     floatTracker = malloc(sizeof(Ship));
-    floatTracker->route.path =(Cords **)malloc(sizeof(Cords) * ROUTE_COMPLEXITY);
+
     floatTracker->cords.col = 0;
     floatTracker->cords.row = 0;
     floatTracker->isActive = 1;
@@ -92,6 +94,7 @@ void makeLevel(Game *gameIn)
     player->home = player->cords;
     floatTracker->home = floatTracker->cords;
 }
+
 /**
  * Frees all of the memory allocated during makeLevel
  */
@@ -168,48 +171,16 @@ void drawSidePanel(Game *game)
  */
 void makeFloatPath(Cords floatRadius)
 {
+    floatTracker->route.pathLength = 2;
+    floatTracker->route.path = (Cords **)malloc(sizeof(Cords) * floatTracker->route.pathLength);
     floatTracker->route.activity = FLOATING;
-    floatTracker->route.pathLength = 8;
+    floatTracker->shipType = NONE;
     floatTracker->route.currentStep = 0;
-    for (int i = 0; i < floatTracker->route.pathLength; i++)
-    {
-        // Go in a counter clockwise circle around the home point
-        switch (i)
-        {
-        case 0:
-            floatTracker->route.path[i]->col = floatTracker->home.col + floatRadius.col;
-            floatTracker->route.path[i]->row = floatTracker->home.row;
-            break;
-        case 1:
-            floatTracker->route.path[i]->col = floatTracker->home.col; // + floatRadius.col;
-            floatTracker->route.path[i]->row = floatTracker->home.row; // + -1 * floatRadius.row;
-            break;
-
-        case 2:
-            floatTracker->route.path[i]->col = 0 + floatTracker->home.col;
-            floatTracker->route.path[i]->row = -1 * floatRadius.row + floatTracker->home.row;
-            break;
-        case 3:
-            floatTracker->route.path[i]->col = -1 * floatRadius.col + floatTracker->home.col;
-            floatTracker->route.path[i]->row = -1 * floatRadius.row + floatTracker->home.row;
-            break;
-        case 4:
-            floatTracker->route.path[i]->col = -1 * floatRadius.col + floatTracker->home.col;
-            floatTracker->route.path[i]->row = 0 + floatTracker->home.row;
-            break;
-        case 5:
-            floatTracker->route.path[i]->col = -1 * floatRadius.col + floatTracker->home.col;
-            floatTracker->route.path[i]->row = floatRadius.row + floatTracker->home.row;
-            break;
-        case 6:
-            floatTracker->route.path[i]->col = 0 + floatTracker->home.col;
-            floatTracker->route.path[i]->row = floatRadius.row + floatTracker->home.row;
-            break;
-        case 7:
-            floatTracker->route.path[i]->col = floatRadius.col + floatTracker->home.col;
-            floatTracker->route.path[i]->row = floatRadius.row + floatTracker->home.row;
-        }
-    }
+    Cords **path = floatTracker->route.path;
+    path[0]->col = floatRadius.col;
+    path[0]->row = 0;
+    path[1]->col = -1 * floatRadius.col;
+    path[0]->row = 0;
 }
 /** 
  * @param cords1 Pointer to a ships Cords
@@ -248,7 +219,7 @@ Direction getRelativeDirection(Cords *cords1, Cords *cords2)
         case RIGHT:
             return DR;
         default:
-            return NEUTRAL;
+            return DOWN;
         }
     }
     case UP:
@@ -258,7 +229,7 @@ Direction getRelativeDirection(Cords *cords1, Cords *cords2)
         case LEFT:
             return UL;
         case RIGHT:
-            return UL;
+            return UR;
         default:
             return UP;
         }
@@ -323,7 +294,7 @@ void levelOne(void)
 {
 
     numEnemies = 10;
-    enemies = ((Ship **)malloc(sizeof(Ship*) * numEnemies));
+    enemies = ((Ship **)malloc(sizeof(Ship *) * numEnemies));
     numAttackers = 2;
     int spacing = GAME_WIDTH / (numEnemies / 2) - SHIP_WIDTH;
     Cords floatRadius;
@@ -336,7 +307,8 @@ void levelOne(void)
     // Horizontal freedom of movenemt is 20
     // Vertical freedom of movement is 20
     floatRadius.col = 20;
-    floatRadius.row = 20;
+    floatRadiusX = 20;
+    floatRadius.row = 0; //20;
     makeFloatPath(floatRadius);
     for (int i = 0, n = numEnemies / 2; i < numEnemies / 2; i++, n++)
     {
@@ -363,12 +335,10 @@ void levelTwo(void)
 // TODO
 void levelThree(void)
 {
-    
 }
 // TODO
 void levelFour(void)
 {
-    
 }
 // TODO
 void levelFive(void)
@@ -377,5 +347,4 @@ void levelFive(void)
 // TODO
 void levelSix(void)
 {
-
 }

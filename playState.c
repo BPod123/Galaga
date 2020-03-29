@@ -13,12 +13,14 @@ void handlePlayerInput(u32 currentButtons, u32 previousButtons);
 void move(Ship *ship, Direction direction);
 int isValidMotion(Ship *ship, Direction direction);
 void handleCollisions(Game *game);
+Cords getFloatTarget(Ship *ship);
 
 void showKillPlayer(void);
 // TODO
 void takeExtraLife(int life);
 void executeRoute(Ship *ship);
 void planRoute(Ship *enemy);
+
 /* // TODO Maybe
 void redrawAllShips(void);*/
 /**
@@ -28,6 +30,7 @@ void redrawAllShips(void);*/
  * @param previousButtons the currenmt buttons from the previous loop in Game.main*/
 void runPlayState(Game *game, u32 currentButtons, u32 previousButtons)
 {
+    levelCounter++;
     int lives = game->lives;
     waitForVBlank();
     // * Enemy Actions
@@ -95,9 +98,20 @@ void enemyMovements(void)
         }
         if (enemies[i]->route.activity == FLOATING)
         {
-            enemies[i]->route.currentStep = floatTracker->route.currentStep;
+            // int floatWidth = floatTracker->route.path[0]->col;
+            // int num = (floatWidth % count);
+            // Cords targetCords;
+            // targetCords.row = enemies[i]->home.row;
+            // if (num < floatWidth / 2) {
+            //     targetCords.col = 0;//enemies[i]->home.col - num;
+            // } else {
+            //     targetCords.col = GAME_WIDTH - SHIP_WIDTH;//enemies[i]->home.col + num;
+            // }
+            // Direction direction = getRelativeDirection(&enemies[i]->cords, &targetCords);
+
+            // move(enemies[i], direction);
             floatingEnemies++;
-            //executeRoute(enemies[i]);
+            executeRoute(enemies[i]);
             continue;
         }
     }
@@ -324,7 +338,7 @@ void executeRoute(Ship *ship)
     switch (ship->route.activity)
     {
     case FLOATING:
-        if (ship->shipType == NONE)
+        /*if (ship->shipType == NONE)
         {
             // This is the floatTracker
             // Check if at current target
@@ -338,18 +352,30 @@ void executeRoute(Ship *ship)
                 // FloatTracker has reached its current target
                 ship->route.currentStep++;
                 // Check for out of bounds
-                if (ship->route.currentStep == ship->route.pathLength)
+                if (ship->route.currentStep >= ship->route.pathLength)
                     ship->route.currentStep = 0;
 
                 executeRoute(ship);
                 return;
             }
             Direction direction = getRelativeDirection(&ship->cords, ship->route.path[ship->route.currentStep]);
-            move(ship, direction);
+            moveCords(&floatTracker->cords, direction);
+            ship->direction = direction;
             return;
         }
         // Ship is a normal enemy floating
-        move(ship, floatTracker->direction);
+        Cords target = getFloatTarget(ship);
+        Direction direction = getRelativeDirection(&ship->cords, &target);
+        move(ship, direction);*/
+        {
+            int mod = levelCounter % (floatRadiusX * 2);
+            if (mod < floatRadiusX)
+                move(ship, LEFT);
+            else
+            {
+                move(ship, RIGHT);
+            }
+        }
         break;
     case ATTACKRUN:
         // Direction direction = getRelativeDirection(&ship->cords, ship->route.path[ship->route.currentStep]);
@@ -455,32 +481,11 @@ void executeRoute(Ship *ship)
     default: // Should never come to this
         return;
     }
-
-    // Handle
-    Cords *target = ship->route.path[ship->route.currentStep];
-    Direction direction = getRelativeDirection(&ship->cords, target);
-    if (direction == NEUTRAL)
-    {
-        ship->route.currentStep++;
-        if (ship->route.currentStep < ship->route.pathLength)
-        {
-            executeRoute(ship);
-        }
-        else
-        { // The current route has been executed
-            if (ship->shipType == MISSILE)
-            {
-                // Missile has made it to top of screen
-                eraseShip(ship);
-                ship->isActive = 0;
-                return;
-            }
-            if (ship->shipType == player->shipType) // This is if the player is being controlled by game (in the event that the player dies and needs a new life)
-                player->isActive = 1;
-        }
-    }
-    else
-    {
-        move(ship, direction);
-    }
+}
+Cords getFloatTarget(Ship *ship)
+{
+    Cords target;
+    target.col = ship->home.col + floatTracker->cords.col;
+    target.row = ship->home.row + floatTracker->cords.row;
+    return target;
 }

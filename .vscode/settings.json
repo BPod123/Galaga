@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "winimage.h": "c"
+        "winimage.h": "c",
+        "explosionbig.h": "c"
     }
 }
