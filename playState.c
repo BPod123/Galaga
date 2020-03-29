@@ -13,7 +13,6 @@ void handlePlayerInput(u32 currentButtons, u32 previousButtons);
 void move(Ship *ship, Direction direction);
 int isValidMotion(Ship *ship, Direction direction);
 void handleCollisions(Game *game);
-void fireMissile(void);
 
 void showKillPlayer(void);
 // TODO
@@ -41,7 +40,8 @@ void runPlayState(Game *game, u32 currentButtons, u32 previousButtons)
         executeRoute(player);
     }
     // * Missile Actions
-    for (int i = 0; i < MAX_MISSILES; i++) {
+    for (int i = 0; i < MAX_MISSILES; i++)
+    {
         if (missiles[i]->isActive)
             executeRoute(missiles[i]);
     }
@@ -142,9 +142,23 @@ void handlePlayerInput(u32 currentButtons, u32 previousButtons)
     {
         move(player, RIGHT);
     }
-    if (KEY_JUST_RELEASED(BUTTON_UP, currentButtons, previousButtons))
+    if (KEY_JUST_PRESSED(BUTTON_UP, currentButtons, previousButtons))
     {
-        fireMissile();
+        for (int index = 0; index < MAX_MISSILES; index++)
+        {
+            if (missiles[index]->isActive)
+                continue;
+
+            missiles[index]->isActive = 1;
+            missiles[index]->direction = UP;
+            missiles[index]->cords.col = player->cords.col + getWidth(player) / 2 - getWidth(missiles[index]) / 2;
+            missiles[index]->cords.row = player->cords.row - getHeight(missiles[index]) - 1;
+            missiles[index]->home.col = missiles[index]->cords.col;
+            missiles[index]->home.row = 0;
+            drawShip(missiles[index], missiles[index]->direction);
+
+            break;
+        }
     }
 }
 void move(Ship *ship, Direction direction)
@@ -207,40 +221,7 @@ void move(Ship *ship, Direction direction)
             floatTracker->route.currentStep++;
     }
 }
-/** If the maximum number of active missiles has not been reached, will set an inactive missile to active and place it in the 
- * corect location and fire it. If all missile are active, will do nothing
- * The misisle will be placed directly aboce the player */
-void fireMissile(void)
-{
-    // Find an inactvie missile in missiles
-    int index = -1;
-    for (int i = 0; i < MAX_MISSILES; i++)
-    {
-        if (!missiles[i]->isActive)
-        {
-            index = i;
-            break;
-        }
-        if (index == -1)
-        { // All missiles are currently active
-            return;
-        }
-        missiles[index]->direction = UP;
-        // Place Missile
-        missiles[index]->cords.col = 50;//player->cords.col + getWidth(player) / 2 - getWidth(missiles[index]) / 2;
-        missiles[index]->cords.row = 50;//player->cords.row - getHeight(missiles[index]) - 1;
-        drawShip(missiles[i], UP);
-        // Set Route
-        Cords **path = missiles[index]->route.path;
-        path[0]->col = missiles[index]->cords.col;
-        path[0]->row = 0;
-        missiles[index]->route.currentStep = 0;
-        missiles[index]->route.pathLength = 1;
-        missiles[index]->isActive = 1;
-        missiles[index]->route.activity = SHOTSFIRED;
-        drawShip(missiles[index], missiles[index]->direction);
-    }
-}
+
 /**
  * @return true if there is room for the ship to move in the direction
  */
@@ -375,7 +356,8 @@ void executeRoute(Ship *ship)
         if (getRelativeDirection(&ship->cords, ship->route.path[ship->route.currentStep]) == NEUTRAL)
         {
             ship->route.currentStep++;
-            if (ship->route.currentStep == ship->route.pathLength) {
+            if (ship->route.currentStep == ship->route.pathLength)
+            {
                 ship->route.activity = RETRUNING_HOME;
             }
             executeRoute(ship);
@@ -386,18 +368,6 @@ void executeRoute(Ship *ship)
             move(ship, getRelativeDirection(&ship->cords, ship->route.path[ship->route.currentStep]));
         }
         break;
-    case SHOTSFIRED:
-    {
-        // is a missile
-        if (ship->direction == UP && ship->cords.row == 0)
-        {
-            // The upward traveling missile is at the end of its route
-            ship->isActive = 0;
-            eraseShip(ship);
-            return;
-        }
-        move(ship, ship->direction);
-    }
     case RETRUNING_HOME:
         if (ship->shipType == PLAYER)
         {
@@ -410,6 +380,20 @@ void executeRoute(Ship *ship)
             }
             else
                 // player still returning home
+                move(ship, direction);
+            return;
+        }
+        else if (ship->shipType == MISSILE)
+        {
+            Direction direction = getRelativeDirection(&ship->cords, &ship->home);
+            if (direction == NEUTRAL)
+            {
+                // Missile has flown as far as its gonna go
+                ship->isActive = 0;
+                eraseShip(ship);
+            }
+            else
+                // Missile stil traveling
                 move(ship, direction);
             return;
         }

@@ -7,6 +7,7 @@
 #include "images/titleScreen.h"
 #include "level.h"
 #include <stdlib.h>
+#include "images/missile_Up.h"
 //#include "util.h"
 Ship *ship;
 Ship *testShip;
@@ -20,6 +21,35 @@ void runTest(void)
     game->level = 1;
     game->lives = 3;
     makeLevel(game);
+    waitForVBlank();
+    drawLevel();
+    u32 curr = BUTTONS;
+    u32 prev = BUTTONS;
+    while (1)
+    {
+        curr = BUTTONS;
+        waitForVBlank();
+        handlePlayerInput(curr, prev);
+        for (int i = 0; i < MAX_MISSILES; i++)
+        {
+            if (missiles[i]->isActive)
+            {
+                executeRoute(missiles[i]);
+            }
+        }
+        delay(DELAY_TIME);
+        prev = curr;
+    }
+}
+
+void testPlacingMissileAboveShip(void)
+{
+    Game *game = malloc(sizeof(Game));
+    game->level = 1;
+    game->lives = 3;
+    makeLevel(game);
+    waitForVBlank();
+    drawLevel();
     u32 curr = BUTTONS;
     u32 prev = BUTTONS;
     while (1)
@@ -28,23 +58,9 @@ void runTest(void)
         waitForVBlank();
         if (KEY_JUST_PRESSED(BUTTON_UP, curr, prev))
         {
-            fireMissile();
-            int index = -1;
-            for (int i = 0; i < MAX_MISSILES; i++) {
-                if (!missiles[index]->isActive) {
-                    index = i;
-                    break;
-                }
-                if (index != -1) {
-                    missiles[index]->cords.col = GAME_WIDTH / 2;
-                    missiles[index]->cords.row = HEIGHT / 2;
-                    missiles[index]->direction = UP;
-                    missiles[index]->route.path[0]->col = GAME_WIDTH / 2;
-                    missiles[index]->route.path[0]->row = 0;
-                    
-                }
-            }
+            drawImageDMA(player->cords.row - MISSILE_UP_HEIGHT - 1, player->cords.col + getWidth(player) / 2 - MISSILE_UP_WIDTH / 2, MISSILE_UP_WIDTH, MISSILE_UP_HEIGHT, missile_Up);
         }
+
         handlePlayerInput(curr, prev);
         delay(DELAY_TIME);
         prev = curr;

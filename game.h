@@ -8,7 +8,7 @@
 #define NUM_LEVELS 6
 #define NUM_LIVES 3
 #define MAX_ENEMIES 30
-#define MAX_MISSILES 10
+#define MAX_MISSILES 5
 #define DELAY_TIME 2
 #define ROUTE_COMPLEXITY 10
 #define EXPLOSION_FRAMES 4
@@ -49,8 +49,7 @@ typedef enum shipActivity {
         FLOATING, // Floating around its home
         ATTACKRUN, // Doing and attack run
         CONTROLLING, // Player Control
-        RETRUNING_HOME, // For ships after attack run and player when getting new life
-        SHOTSFIRED, // For Missiles
+        RETRUNING_HOME, // For ships after attack run and player when getting new life and missiles
         EXPLODING
 } Activity;
 /** This is everything having to do with a ships actions */

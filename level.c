@@ -49,9 +49,9 @@ void makeLevel(Game *gameIn)
     for (int i = 0; i < MAX_MISSILES; i++)
     {
         missiles[i] = malloc(sizeof(Ship));
-        missiles[i]->route.path =(Cords **)malloc(sizeof(Cords) * ROUTE_COMPLEXITY);
         missiles[i]->shipType = MISSILE;
-        missiles[i]->route.activity = SHOTSFIRED;
+        missiles[i]->route.activity = RETRUNING_HOME;
+        missiles[i]->isActive = 0;
     }
     // Set the float path for floatTracker and by extension, all ships that float
     // * Make float Tracker
@@ -108,7 +108,7 @@ void deconstructLevel(void)
     // * Free missiles
     for (int i = 0; i < MAX_MISSILES; i++)
     {
-        free(missiles[i]->route.path[0]);
+        free(missiles[i]->route.path);
         free(missiles[i]);
     }
     // * Free enemies
