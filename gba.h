@@ -81,7 +81,7 @@ extern volatile unsigned short *videoBuffer;
 #define KEY_JUST_PRESSED(key, buttons, oldbuttons) ((KEY_DOWN(key, buttons) & ~(KEY_DOWN(key, oldbuttons))))
 
 // This one is mine
-#define KEY_JUST_RELEASED(key, button, oldbuttons) ((~(KEY_DOWN(key, buttons)) & (KEY_DOWN(key, oldbuttons))))
+#define KEY_JUST_RELEASED(key, buttons, oldbuttons) ((~(KEY_DOWN(key, buttons)) & (KEY_DOWN(key, oldbuttons))))
 
 // ---------------------------------------------------------------------------
 //                       DMA
