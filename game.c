@@ -8,16 +8,17 @@
 #include "images/titleScreen.h"
 #include "testing.h"
 void runStartState(void);
-void runNewLevelState(Game *game);
-void runPlayState(Game *game, u32 currentButtons, u32 previousButtons);
+void runNewLevelState(void);
+void runPlayState(u32 currentButtons, u32 previousButtons);
 void runLoseState(void);
 void runWinState(void);
-GBAState selectState(GBAState state, Game *game, u32 currentButtons, u32 previousButtons);
+GBAState selectState(GBAState state, u32 currentButtons, u32 previousButtons);
 
 // Counts the  number of iterations of the loop in main
 int count = 0;
 // Changes with every iteration of main and is used to generate random numbers. The seed for this changes based on the value of count when the user takes certain actions
 int random = 0;
+Game *game;
 int main(void)
 {
   /* TODO: */ // DONE
@@ -27,8 +28,9 @@ int main(void)
   u32 previousButtons = BUTTONS;
   u32 currentButtons = BUTTONS;
   // ! Set Starting state
-  GBAState state = START;//RUN_TEST;//START;
-  Game *game = malloc(sizeof(sizeof(Game)));
+  GBAState state = START;
+  int test = 0;
+  game = malloc(sizeof(sizeof(Game)));
   srand(count);
   while (1)
   {
@@ -48,19 +50,27 @@ int main(void)
       // state = ?
       break;
     case NEW_GAME:
-    game->level = 1;
-    game->score = 0;
-    game->lives = NUM_LIVES;
-    case NEW_LEVEL: {
+      game->level = 1;
+      game->score = 0;
+      game->lives = NUM_LIVES;
+    case NEW_LEVEL:
+    {
       // This helps with randomizing the ships because it is bases on when the user does stuff, taking advantage of their unpredictability.
       srand(random);
       random = rand();
-      runNewLevelState(game);
+      runNewLevelState();
       state = PLAY;
       continue;
     }
     case PLAY:
-      runPlayState(game, currentButtons, previousButtons);
+      if (test)
+      {
+        runTest(currentButtons, previousButtons);
+      }
+      else
+      {
+        runPlayState(currentButtons, previousButtons);
+      }
       break;
     case WIN:
       runWinState();
@@ -68,11 +78,9 @@ int main(void)
     case LOSE:
       runLoseState();
       break;
-    case RUN_TEST:
-      runTest();
     }
     delay(DELAY_TIME);
-    state = selectState(state, game, currentButtons, previousButtons);
+    state = selectState(state, currentButtons, previousButtons);
     previousButtons = currentButtons; // Store the current state of the buttons
   }
 
@@ -80,7 +88,7 @@ int main(void)
 
   return 0;
 }
-GBAState selectState(GBAState state, Game *game, u32 currentButtons, u32 previousButtons)
+GBAState selectState(GBAState state, u32 currentButtons, u32 previousButtons)
 {
   switch (state)
   {
@@ -90,9 +98,10 @@ GBAState selectState(GBAState state, Game *game, u32 currentButtons, u32 previou
     //   while(KEY_DOWN_NOW(KEY_DOWN_NOW(BUTTON_START)));
     //   return NEW_LEVEL;
     // }
-    if (KEY_DOWN(BUTTON_START, currentButtons) && ! (KEY_DOWN(BUTTON_START,previousButtons)))
+    if (KEY_DOWN(BUTTON_START, currentButtons) && !(KEY_DOWN(BUTTON_START, previousButtons)))
       return NEW_GAME;
-    else return START;
+    else
+      return START;
   }
   case NEW_LEVEL:
     return PLAY;
@@ -111,13 +120,11 @@ GBAState selectState(GBAState state, Game *game, u32 currentButtons, u32 previou
     if (KEY_JUST_PRESSED(BUTTON_START, currentButtons, previousButtons))
       return START;
 
-  case LOSE: // LOSE
+  default: // LOSE
     if (KEY_JUST_PRESSED(BUTTON_START, currentButtons, previousButtons))
       return START;
     else
       return LOSE;
-  default:
-    return RUN_TEST;
   }
 }
 void runStartState(void)
@@ -139,9 +146,9 @@ void runLoseState(void)
   drawString(20, 0, "and to all other life in the universe which eventually sucumbed to it. Trillions died", WHITE);
   drawString(30, 0, "and it was all because you couldn't destroy a few unarmed ships.", WHITE);
 }
-void runNewLevelState(Game *game)
+void runNewLevelState(void)
 {
-  makeLevel(game);
+  makeLevel();
   drawLevel();
 }
 /** Delays the game
@@ -151,4 +158,8 @@ void delay(int delayTime)
   volatile int x = 0;
   for (int i = 0; i < delayTime * 8000; i++)
     x++;
+}
+Game *getGame(void)
+{
+  return game;
 }

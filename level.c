@@ -4,6 +4,7 @@
 #include "images/playerShip_Up.h"
 #include <stdlib.h>
 #include "util.h"
+#include "game.h"
 #define EXTRA_LIFE_COL(i) (SHIP_WIDTH + SHIP_WIDTH * (i))
 #define EXTRA_LIFE_ROW (HEIGHT - SHIP_WIDTH)
 #define DRAW_EXTRA_LIFE(i) drawImageDMA(EXTRA_LIFE_ROW, EXTRA_LIFE_COL(i), SHIP_WIDTH, SHIP_HEIGHT, playerShip_Up);
@@ -26,15 +27,14 @@ Ship *missiles[MAX_MISSILES];
 Ship *floatTracker;
 int levelCounter;
 int floatRadiusX;
-Game *game;
 /** The number of enemies in the current level, set in the level functions (levelOne(), levelTwo(), ...) */
 int numEnemies;
 /** The maximum number of attackers at a time for the current level, set in the level functions (levelOne(), levelTwo(), ...) */
 int numAttackers;
-void makeLevel(Game *gameIn)
+void makeLevel(void)
 {
+    Game *game = getGame();
     levelCounter = 0;
-    game = &(*gameIn);
     // * Place Player
     player = malloc(sizeof(Ship));
     player->shipType = PLAYER;
@@ -130,6 +130,7 @@ void drawLevel(void)
     waitForVBlank();
     drawImageDMA(0, 0, LEVELBACKGROUND_WIDTH, LEVELBACKGROUND_HEIGHT, levelBackground);
     drawRectDMA(0, GAME_WIDTH, WIDTH - GAME_WIDTH, HEIGHT, BLACK);
+    Game *game = getGame();
     // Draw Extra Lives
     for (int i = 0; i < game->lives - 1; i++)
         DRAW_EXTRA_LIFE(i);
@@ -142,12 +143,12 @@ void drawLevel(void)
     drawShip(player, UP);
 
     // Draw Side Panel
-    drawSidePanel(game);
+    drawSidePanel();
 }
 // Displays leve land score
-void drawSidePanel(Game *game)
+void drawSidePanel(void)
 {
-    UNUSED(game);
+    Game *game = getGame();
     char lev[2];
     lev[0] = game->level + 48;
     lev[1] = ' ';

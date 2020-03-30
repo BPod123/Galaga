@@ -82,8 +82,11 @@ int hasCollided(Ship *s1, Ship *s2)
 {
     Cords *s1Cords = &s1->cords;
     Cords *s2Cords = &s2->cords;
-    return overlap(s1Cords->col, s1Cords->col + getWidth(s1), s2Cords->col, s2Cords->col + getWidth(s2)) ||
-           overlap(s1Cords->row, s1Cords->row + getHeight(s1), s2Cords->row, s2Cords->row + getHeight(s2));
+    if (s1Cords->col > s2Cords->col + getWidth(s2) || s2Cords->col > s1Cords->col + getWidth(s1))
+        return 0;
+    if (s1Cords->row > s2Cords->row + getHeight(s2) || s2Cords->row > s1Cords->row + getHeight(s1))
+        return 0;
+    return 1;
 }
 
 /** Replaces a ship with the background on the screen 
@@ -310,35 +313,4 @@ const u16 *getImage(Ship *ship, Direction direction)
     }
     }
     return playerShip_Down;
-}
-/**
- * Determines if the span between two points overlap.
- * This is useful for seeing if there is overlap bettween the rows and columns of two ships
- * For the function to work properly, the following relationships must be true: s1C1 <= s1C2, s2C1 <= s2C2
- * @param s1C1 Ship 1 Coordinate 1
- * @param s1C2 Ship 1 Coordinate 2
- * @param s2C1 Ship 2 Coordinate 1
- * @param s2C2 Ship 2 Coordinate 2
- * @return 1 if there is overlap, 0 if there is no overlap
- * */
-int overlap(int s1C1, int s1C2, int s2C1, int s2C2)
-{
-    // lets pretend we are looking at the columns and assume that coorinates are left / right of each other
-    // This would be done the same if we assumed that they were rows as well
-    int *leftS1 = &s1C1;
-    int *rightS1 = &s1C2;
-    int *leftS2 = &s2C1;
-    int *rightS2 = &s2C2;
-    if (leftS1 < leftS2 && rightS1 > leftS2) // overlap on right side of s1 and left side of s2
-        return 1;
-    else if (leftS1 < rightS2 && rightS1 > rightS2) // overlap on left side of s1 and right side of s2
-        return 1;
-    else if (leftS1 > leftS2 && rightS1 < rightS2) // s1 is smaller than s2 and inside of s2
-        return 1;
-    else if (leftS2 > leftS1 && rightS2 < rightS1) // s2 is smaller than s1 and inside of s1
-        return 1;
-    else if (leftS1 == leftS2 || rightS1 == rightS2) // The ships line up completely on similar sides
-        return 1;
-    else
-        return 0;
 }

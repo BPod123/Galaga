@@ -19,8 +19,7 @@ typedef enum {
   NEW_LEVEL,
   PLAY,
   WIN,
-  LOSE,
-  RUN_TEST
+  LOSE
 } GBAState;
 typedef struct gameData {
         int lives;
@@ -70,6 +69,7 @@ typedef struct ship {
     Route route;
     int isActive;
 } Ship;
+Game *getGame(void);
 // counts the number of loops through the state machine, also used to make the distribution of enemy types random.
 extern int count;
 // A random number that changes frequently, and the random seed changes based on what count is when the player takes certain actions
