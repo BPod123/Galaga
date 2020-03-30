@@ -12,9 +12,9 @@ void enemyMovements(void);
 void handlePlayerInput(u32 currentButtons, u32 previousButtons);
 void move(Ship *ship, Direction direction);
 int isValidMotion(Ship *ship, Direction direction);
-void handleCollisions(void);
-void handleExplosions(Ship *ship);
+void handleCollisions(Game *game);
 Cords getFloatTarget(Ship *ship);
+void handleExplosion(Ship *ship);
 
 void showKillPlayer(void);
 // TODO
@@ -29,9 +29,8 @@ void redrawAllShips(void);*/
  * @param game The current game
  * @param currentButtons The most recently pressed buttons by the player
  * @param previousButtons the currenmt buttons from the previous loop in Game.main*/
-void runPlayState(u32 currentButtons, u32 previousButtons)
+void runPlayState(Game *game, u32 currentButtons, u32 previousButtons)
 {
-    Game *game = getGame();
     levelCounter++;
     int lives = game->lives;
     waitForVBlank();
@@ -50,7 +49,7 @@ void runPlayState(u32 currentButtons, u32 previousButtons)
         if (missiles[i]->isActive)
             executeRoute(missiles[i]);
     }
-    handleCollisions();
+    handleCollisions(game);
     if (lives > game->lives)
     {
         // Player has died
@@ -138,43 +137,39 @@ void enemyMovements(void)
  * If the player is killed, will decrement the number of lives
  * @param game The current game 
  * */
-void handleCollisions(void)
+void handleCollisions(Game *game)
 {
-    // Check enemy collisions
-    int playerDied = 0;
-    for (int i = 0; i < numEnemies; i++)
-    {
+    UNUSED(game);
+    // TODO
+    for (int i = 0; i < numEnemies; i++) {
         if (!enemies[i]->isActive)
             continue;
-
-
-        if (hasCollided(player, enemies[i]))
-        {
-            enemies[i]->route.activity = EXPLODING;
-            enemies[i]->route.exploding++;
-            player->route.activity = EXPLODING;
-            player->route.exploding++;
-            handleExplosions(enemies[i]);
-            playerDied = 1;
-        }
-        // Check for collisions with missiles
-        for (int n = 0; n < MAX_MISSILES; n++)
-        {
-            if (!missiles[n]->isActive)
+        for(int m = 0; m < MAX_MISSILES; m++) {
+            if (!missiles[m]->isActive)
                 continue;
-
-            if (hasCollided(missiles[n], enemies[i]))
-            {
-                missiles[n]->isActive = 0;
-                eraseShip(missiles[n]);
+            if (hasCollided(enemies[i], missiles[m])) {
+                eraseShip(missiles[m]);
+                missiles[m]->isActive = 0;
                 enemies[i]->route.activity = EXPLODING;
-                enemies[i]->route.exploding++;
-                handleExplosions(enemies[i]);
+                game->score += 10;
+                drawSidePanel(game);
+                break;
             }
         }
-    }
-    if (playerDied) {
-        handleExplosions(player);
+        if (hasCollided(enemies[i], player)) {
+            enemies[i]->route.activity = EXPLODING;
+            player->route.activity = EXPLODING;
+            game->score += 10;
+            drawSidePanel(game);
+        }
+        if (enemies[i]->route.activity == EXPLODING)
+            handleExplosion(enemies[i]);
+        if (player->route.activity == EXPLODING) {
+            handleExplosion(player);
+            waitForVBlank();
+            drawSidePanel(game);
+        }
+
     }
 }
 /** Moves player and fires missiles for player
@@ -374,16 +369,45 @@ void executeRoute(Ship *ship)
     switch (ship->route.activity)
     {
     case FLOATING:
-    {
-        int mod = levelCounter % (floatRadiusX * 2);
-        if (mod < floatRadiusX)
-            move(ship, LEFT);
-        else
+        /*if (ship->shipType == NONE)
         {
-            move(ship, RIGHT);
+            // This is the floatTracker
+            // Check if at current target
+            Cords *targetPtr = (ship->route.path[ship->route.currentStep]);
+            Cords target;
+            target.col = targetPtr->col;
+            target.row = targetPtr->row;
+            // Make sure it is going in the right direction
+            if (CORDS_EQUAL(ship->cords, target))
+            {
+                // FloatTracker has reached its current target
+                ship->route.currentStep++;
+                // Check for out of bounds
+                if (ship->route.currentStep >= ship->route.pathLength)
+                    ship->route.currentStep = 0;
+
+                executeRoute(ship);
+                return;
+            }
+            Direction direction = getRelativeDirection(&ship->cords, ship->route.path[ship->route.currentStep]);
+            moveCords(&floatTracker->cords, direction);
+            ship->direction = direction;
+            return;
         }
-    }
-    break;
+        // Ship is a normal enemy floating
+        Cords target = getFloatTarget(ship);
+        Direction direction = getRelativeDirection(&ship->cords, &target);
+        move(ship, direction);*/
+        {
+            int mod = levelCounter % (floatRadiusX * 2);
+            if (mod < floatRadiusX)
+                move(ship, LEFT);
+            else
+            {
+                move(ship, RIGHT);
+            }
+        }
+        break;
     case ATTACKRUN:
         // Direction direction = getRelativeDirection(&ship->cords, ship->route.path[ship->route.currentStep]);
         if (getRelativeDirection(&ship->cords, ship->route.path[ship->route.currentStep]) == NEUTRAL)
@@ -460,65 +484,34 @@ void executeRoute(Ship *ship)
             }
         }
         break;
-    // case EXPLODING:
-    //     waitForVBlank();
-    //     while(1);
-    //     drawRectDMA(0, 0, 15, 15, RED);
-    //     if (ship->route.exploding >= EXPLOSION_FRAMES)
-    //     {
-    //         ship->route.exploding = 0;
-    //         eraseShip(ship);
-    //         ship->isActive = 0;
-    //         if (ship->shipType == PLAYER) {
-    //             getGame()->lives--;
-    //         }
-    //         return;
-    //     }
-    //     if (ship->route.exploding == EXPLOSION_FRAMES - 1 && ship->shipType == PLAYER)
-    //     {
-    //         drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSIONPLAYER_WIDTH, EXPLOSIONPLAYER_HEIGHT, explosionPlayer);
-    //     }
-    //     else
-    //     {
-    //         if (ship->route.exploding % 2 == 0)
-    //         {
-    //             drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSIONBIG_WIDTH, EXPLOSIONBIG_HEIGHT, explosionBig);
-    //         }
-    //         else
-    //         {
-    //             drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSION_WIDTH, EXPLOSION_HEIGHT, explosion);
-    //         }
-    //     }
-    //     ship->route.exploding++;
-    //     break;
+    case EXPLODING:
+        if (ship->route.exploding > EXPLOSION_FRAMES || (ship->shipType != PLAYER && ship->route.exploding >= EXPLOSION_FRAMES))
+        {
+            ship->route.exploding = 0;
+            eraseShip(ship);
+            ship->isActive = 0;
+            return;
+        }
+        if (ship->route.exploding == EXPLOSION_FRAMES && ship->shipType == PLAYER)
+        {
+            drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSIONPLAYER_WIDTH, EXPLOSIONPLAYER_HEIGHT, explosionPlayer);
+        }
+        else
+        {
+            if (ship->route.exploding % 2 == 0)
+            {
+                drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSIONBIG_WIDTH, EXPLOSIONBIG_HEIGHT, explosionBig);
+            }
+            else
+            {
+                drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSION_WIDTH, EXPLOSION_HEIGHT, explosion);
+            }
+        }
+        ship->route.exploding++;
+        break;
     default: // Should never come to this
         return;
     }
-}
-void handleExplosions(Ship *ship)
-{
-    for (int i = 0; i < EXPLOSION_FRAMES; i++) {
-        waitForVBlank();
-        if (i % 2 == 0) {
-            drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSION_WIDTH, EXPLOSION_HEIGHT, explosion);
-        }
-        else {
-            drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSIONBIG_WIDTH, EXPLOSIONBIG_HEIGHT, explosionBig);
-        }
-        delay(DELAY_TIME / 2);
-    }
-    waitForVBlank();
-    if (ship->shipType == PLAYER) {
-    drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSIONPLAYER_WIDTH, EXPLOSIONPLAYER_HEIGHT, explosionPlayer);
-    getGame()->lives--;
-    }
-    else {
-        drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSION_WIDTH, EXPLOSION_HEIGHT, explosion);
-    }
-    delay(DELAY_TIME / 2);
-    waitForVBlank();
-    eraseShip(ship);
-
 }
 Cords getFloatTarget(Ship *ship)
 {
@@ -526,4 +519,34 @@ Cords getFloatTarget(Ship *ship)
     target.col = ship->home.col + floatTracker->cords.col;
     target.row = ship->home.row + floatTracker->cords.row;
     return target;
+}
+void handleExplosion(Ship *ship)
+{
+    for (int i = 0; i < EXPLOSION_FRAMES - 1; i++)
+    {
+        waitForVBlank();
+        if (i % 2 == 0)
+        {
+            drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSIONBIG_WIDTH, EXPLOSIONBIG_HEIGHT, explosionBig);
+        }
+        else
+        {
+            drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSION_WIDTH, EXPLOSION_HEIGHT, explosion);
+        }
+        delay(DELAY_TIME / 2);
+    }
+    waitForVBlank();
+    if (ship->shipType == PLAYER) {
+        drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSIONPLAYER_WIDTH, EXPLOSIONPLAYER_HEIGHT, explosionPlayer);
+    }
+    else {
+        drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSION_WIDTH, EXPLOSION_HEIGHT, explosion);
+    }
+    delay(DELAY_TIME / 2);
+    waitForVBlank();
+    eraseShip(ship);
+    ship->isActive = 0;
+    if (ship->shipType == PLAYER) {
+        getGame()->lives--;
+    }
 }

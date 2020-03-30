@@ -3,12 +3,10 @@
 #include "images/levelBackground.h"
 #include "images/playerShip_Up.h"
 #include <stdlib.h>
-#include "util.h"
-#include "game.h"
 #define EXTRA_LIFE_COL(i) (SHIP_WIDTH + SHIP_WIDTH * (i))
 #define EXTRA_LIFE_ROW (HEIGHT - SHIP_WIDTH)
 #define DRAW_EXTRA_LIFE(i) drawImageDMA(EXTRA_LIFE_ROW, EXTRA_LIFE_COL(i), SHIP_WIDTH, SHIP_HEIGHT, playerShip_Up);
-
+char *intToString(int num);
 void makeFloatPath(Cords floatRadius);
 // * These methods set up the field for each level
 void levelOne(void);
@@ -27,14 +25,15 @@ Ship *missiles[MAX_MISSILES];
 Ship *floatTracker;
 int levelCounter;
 int floatRadiusX;
+Game *game;
 /** The number of enemies in the current level, set in the level functions (levelOne(), levelTwo(), ...) */
 int numEnemies;
 /** The maximum number of attackers at a time for the current level, set in the level functions (levelOne(), levelTwo(), ...) */
 int numAttackers;
-void makeLevel(void)
+void makeLevel(Game *gameIn)
 {
-    Game *game = getGame();
     levelCounter = 0;
+    game = &(*gameIn);
     // * Place Player
     player = malloc(sizeof(Ship));
     player->shipType = PLAYER;
@@ -130,7 +129,6 @@ void drawLevel(void)
     waitForVBlank();
     drawImageDMA(0, 0, LEVELBACKGROUND_WIDTH, LEVELBACKGROUND_HEIGHT, levelBackground);
     drawRectDMA(0, GAME_WIDTH, WIDTH - GAME_WIDTH, HEIGHT, BLACK);
-    Game *game = getGame();
     // Draw Extra Lives
     for (int i = 0; i < game->lives - 1; i++)
         DRAW_EXTRA_LIFE(i);
@@ -143,29 +141,21 @@ void drawLevel(void)
     drawShip(player, UP);
 
     // Draw Side Panel
-    drawSidePanel();
+    drawSidePanel(game);
 }
 // Displays leve land score
-void drawSidePanel(void)
+void drawSidePanel(Game *game)
 {
-    Game *game = getGame();
+    UNUSED(game);
+    drawRectDMA(0, GAME_WIDTH, WIDTH - GAME_WIDTH, HEIGHT, BLACK);
     char lev[2];
     lev[0] = game->level + 48;
     lev[1] = ' ';
     drawCenteredString(20, GAME_WIDTH, 40, 10, "Level", WHITE);
     drawCenteredString(30, GAME_WIDTH + 7, 33, 20, &lev[0], RED);
     drawCenteredString(50, GAME_WIDTH, 40, 10, "Score", WHITE);
-    char score[5];
-    if (game->score == 0)
-    {
-        score[0] = '0';
-        score[1] = 0;
-    }
-    else
-    {
-        itoa(game->score, score);
-    }
-    drawCenteredString(60, GAME_WIDTH, 40, 20, &score[0], RED);
+    char *score = intToString(game->score);
+    drawCenteredString(60, GAME_WIDTH, 40, 20, score, RED);
 }
 /** Sets the route of a ship to float around thier home Cords
  * @param ship The ship
@@ -348,4 +338,41 @@ void levelFive(void)
 // TODO
 void levelSix(void)
 {
+}
+
+char *intToString(int num)
+{
+
+
+
+
+    if (num == 0)
+    {
+        char *str = (char *)malloc(sizeof(char *) * 2);
+        str[0] = '0';
+        str[1] = 0;
+        return str;
+    }
+    // int numIndecies = 2;
+    // int pow = 1;
+    // while (pow * 10 < num)
+    // {
+    //     pow *= 10;
+    //     numIndecies++;
+    // }
+    char *str = (char *)malloc(sizeof(char *) * 10);
+    int i = 0;
+    while (num > 0)
+    {
+        str[i++] = num % 10 + '0';
+        num /= 10;
+    }
+
+    char *res = (char *)malloc(sizeof(char*) * (i));
+        i--;
+    for (int n = 0, e = i; n < i; n++, e--) {
+        res[n] = str[e];
+    }
+    free(str);
+    return res;
 }

@@ -51,7 +51,7 @@ void itoa(int num, char *buffer)
     }
     buffer[index] = num % 10 + '0';
     index++;
-    buffer[index] = 0;
+    buffer[index] = '\0';
 }
 
 char *shipTypeToString(ShipType ship)

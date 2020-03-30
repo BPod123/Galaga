@@ -8,70 +8,23 @@
 #include "level.h"
 #include <stdlib.h>
 #include "images/missile_Up.h"
-#include "images/explosion.h"
-#include "images/explosionBig.h"
-#include "images/explosionPlayer.h"
+
 void placeShipInCenter(Ship *ship);
 void flyShip(void);
 void testRelativeDirection(void);
 void proccessInput(Ship *testShip);
 void testFloatRoute(void);
-void testCollisions(u32 currentButtons, u32 previousButtons);
 //void displayShipData(Ship *ship, int row, int col);
-void runTest(u32 currButtons, u32 prevButtons)
+void runTest(void)
 {
-    testCollisions(currButtons, prevButtons);
-}
-void testCollisions(u32 currentButtons, u32 previousButtons)
-{
-    UNUSED(currentButtons);
-    UNUSED(previousButtons);
-    Game *game = getGame();
-    levelCounter++;
-    int lives = game->lives;
-    waitForVBlank();
-    // * Enemy Actions
-    enemyMovements();
-    // * Player Actions
-    if (player->isActive)
-        //handlePlayerInput(currentButtons, previousButtons);
-        handlePlayerInput(currentButtons, previousButtons);
-    else
-    {
-        executeRoute(player);
-    }
-    // * Missile Actions
-    for (int i = 0; i < MAX_MISSILES; i++)
-    {
-        if (missiles[i]->isActive)
-            executeRoute(missiles[i]);
-    }
-    handleCollisions();
-    if (lives > game->lives)
-    {
-        // Player has died
-        showKillPlayer();
-        if (game->lives > 0)
-        {
-            takeExtraLife(game->lives);
-        }
-    }
-    // ? TEST
-    // for (int i = 0; i < numEnemies; i++) {
-    //     if (!enemies[i]->isActive)
-    //         continue;
-    //     if(enemies[i]->route.activity == EXPLODING) {
-    //         drawImageDMA(enemies[i]->cords.row, enemies[i]->cords.col, getWidth(enemies[i]), getHeight(enemies[i]),explosionPlayer);
-    //     }
-    // }
-    // ? END TEST
+    testFloatRoute();
 }
 void testRelativeDirection(void)
 {
     Game *game = malloc(sizeof(Game));
     game->level = 1;
     game->lives = 3;
-    makeLevel();
+    makeLevel(game);
     waitForVBlank();
     drawLevel();
     u32 curr = BUTTONS;
@@ -97,7 +50,7 @@ void testFloatRoute(void)
     Game *game = malloc(sizeof(Game));
     game->level = 1;
     game->lives = 3;
-    makeLevel();
+    makeLevel(game);
     waitForVBlank();
     drawLevel();
     u32 curr = BUTTONS;
@@ -135,7 +88,7 @@ void testShootMissile(void)
     Game *game = malloc(sizeof(Game));
     game->level = 1;
     game->lives = 3;
-    makeLevel();
+    makeLevel(game);
     waitForVBlank();
     drawLevel();
     u32 curr = BUTTONS;
@@ -161,7 +114,7 @@ void testPlacingMissileAboveShip(void)
     Game *game = malloc(sizeof(Game));
     game->level = 1;
     game->lives = 3;
-    makeLevel();
+    makeLevel(game);
     waitForVBlank();
     drawLevel();
     u32 curr = BUTTONS;
@@ -185,7 +138,7 @@ void testPlacingMissileAboveShip(void)
 //     Game *game = malloc(sizeof(Game));
 //     game->level = 1;
 //     game->lives = 3;
-//     makeLevel();
+//     makeLevel(game);
 //     ship = enemies[0];
 //     ship->isActive = 1;
 //     Cords **path = ship->route.path;
