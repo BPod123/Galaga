@@ -11,4 +11,7 @@ void eraseShip(Ship *ship);
 int getWidth(Ship *ship);
 int getHeight(Ship *ship);
 const u16 *getImage(Ship *ship, Direction direction);
+Ship *constructShip(void);
+void deconstructShip(Ship *ship);
+void deconstructInstruction(Instruction *instruction);
 #endif

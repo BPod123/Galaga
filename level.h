@@ -27,8 +27,4 @@ void makeLevel(Game *game);
 void deconstructLevel(void);
 void drawLevel(void);
 void drawSidePanel(Game *game);
-
-Direction getRelativeDirection(Cords *cords1, Cords *cords2);
-Cords getSeparation(Cords *c1, Cords *c2);
-void moveCords(Cords *cords, Direction direction);
 #endif
