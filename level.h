@@ -22,12 +22,18 @@ extern int numEnemies;
 extern int numAttackers;
 extern int floatRadiusX;
 extern int levelCounter;
-void makeLevel(Game *game);
+void makeLevel(void);
 void deconstructLevel(void);
 void drawLevel(void);
-void drawSidePanel(Game *game);
-
+void drawSidePanel(void);
 Direction getRelativeDirection(Cords cords1, Cords cords2);
 Cords getSeparation(Cords c1, Cords c2);
 void moveCords(Cords *cords, Direction direction);
+char *intToString(int num, char *buffer);
+void levelOne(void);
+void levelTwo(void);
+void levelThree(void);
+void levelFour(void);
+void levelFive(void);
+void levelSix(void);
 #endif

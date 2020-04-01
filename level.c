@@ -6,15 +6,10 @@
 #define EXTRA_LIFE_COL(i) (SHIP_WIDTH + SHIP_WIDTH * (i))
 #define EXTRA_LIFE_ROW (HEIGHT - SHIP_WIDTH)
 #define DRAW_EXTRA_LIFE(i) drawImageDMA(EXTRA_LIFE_ROW, EXTRA_LIFE_COL(i), SHIP_WIDTH, SHIP_HEIGHT, playerShip_Up);
-char *intToString(int num);
+
 // void makeFloatPath(Cords floatRadius);
 // * These methods set up the field for each level
-void levelOne(void);
-void levelTwo(void);
-void levelThree(void);
-void levelFour(void);
-void levelFive(void);
-void levelSix(void);
+
 /** All of the enemies in the game */
 Ship **enemies;
 /** The player */
@@ -23,54 +18,40 @@ Ship *player;
 Ship *missiles[MAX_MISSILES];
 int levelCounter;
 int floatRadiusX;
-Game *game;
 /** The number of enemies in the current level, set in the level functions (levelOne(), levelTwo(), ...) */
 int numEnemies;
 /** The maximum number of attackers at a time for the current level, set in the level functions (levelOne(), levelTwo(), ...) */
 int numAttackers;
-void makeLevel(Game *gameIn)
+void makeLevel(void)
 {
     levelCounter = 0;
-    game = &(*gameIn);
-    // * Place Player
-    player = malloc(sizeof(Ship));
-    player->shipType = PLAYER;
-    player->route.activity = CONTROLLING;
-    player->cords.col = PLAYER_START_COL;
-    player->cords.row = PLAYER_START_ROW;
-    player->isActive = 1;
-    // * Allocate memory for player path
-    player->route.path = (Cords *)malloc(sizeof(Cords) * ROUTE_COMPLEXITY);
-
-    // * Set up Missiles
-    for (int i = 0; i < MAX_MISSILES; i++)
+    Game *game = getGame();
+    if (game->level <= 2)
     {
-        missiles[i] = malloc(sizeof(Ship));
-        missiles[i]->shipType = MISSILE;
-        missiles[i]->route.activity = RETURNING_HOME;
-        missiles[i]->isActive = 0;
+        // * Place Player
+        player = malloc(sizeof(Ship));
+        player->shipType = PLAYER;
+        player->route.activity = CONTROLLING;
+        player->cords.col = PLAYER_START_COL;
+        player->cords.row = PLAYER_START_ROW;
+        player->isActive = 1;
+        // * Allocate memory for player path
+        player->route.path = (Cords *)malloc(sizeof(Cords) * ROUTE_COMPLEXITY);
+
+        // * Set up Missiles
+        for (int i = 0; i < MAX_MISSILES; i++)
+        {
+            missiles[i] = malloc(sizeof(Ship));
+            missiles[i]->shipType = MISSILE;
+            missiles[i]->route.activity = RETURNING_HOME;
+            missiles[i]->isActive = 0;
+        }
     }
     // * Set Up Enemies
     switch (game->level)
     {
     case 1:
         levelOne();
-        break;
-    case 2:
-        levelTwo();
-
-        break;
-    case 3:
-        levelThree();
-        break;
-    case 4:
-        levelFour();
-        break;
-    case 5:
-        levelFive();
-        break;
-    default: // 6
-        levelSix();
         break;
     }
     // Set home for all ships
@@ -86,12 +67,15 @@ void makeLevel(Game *gameIn)
  */
 void deconstructLevel(void)
 {
+    waitForVBlank();
+    drawRectDMA(0, 0, WIDTH, HEIGHT, BLACK);
     // * Free player
     free(player->route.path);
     free(player);
     // * Free missiles
     for (int i = 0; i < MAX_MISSILES; i++)
     {
+        missiles[i]->isActive = 0;
         free(missiles[i]->route.path);
         free(missiles[i]);
     }
@@ -105,6 +89,7 @@ void deconstructLevel(void)
 
 void drawLevel(void)
 {
+    Game *game = getGame();
     waitForVBlank();
     drawImageDMA(0, 0, LEVELBACKGROUND_WIDTH, LEVELBACKGROUND_HEIGHT, levelBackground);
     drawRectDMA(0, GAME_WIDTH, WIDTH - GAME_WIDTH, HEIGHT, BLACK);
@@ -120,12 +105,12 @@ void drawLevel(void)
     drawShip(player, UP);
 
     // Draw Side Panel
-    drawSidePanel(game);
+    drawSidePanel();
 }
 // Displays leve land score
-void drawSidePanel(Game *game)
+void drawSidePanel(void)
 {
-    UNUSED(game);
+    Game *game = getGame();
     drawRectDMA(0, GAME_WIDTH, WIDTH - GAME_WIDTH, HEIGHT, BLACK);
     char lev[2];
     lev[0] = game->level + 48;
@@ -133,8 +118,15 @@ void drawSidePanel(Game *game)
     drawCenteredString(20, GAME_WIDTH, 40, 10, "Level", WHITE);
     drawCenteredString(30, GAME_WIDTH + 7, 33, 20, &lev[0], RED);
     drawCenteredString(50, GAME_WIDTH, 40, 10, "Score", WHITE);
-    char *score = intToString(game->score);
-    drawCenteredString(60, GAME_WIDTH, 40, 20, score, RED);
+    char *score = calloc(2, sizeof(char));
+    if (game->score == 0)
+        score[0] = '0';
+    else
+    {
+        realloc(score, 5);
+    }
+    drawCenteredString(60, GAME_WIDTH, 40, 20, intToString(game->score, score), RED);
+    free(score);
 }
 /** 
  * @param cords1 Pointer to a ships Cords
@@ -281,58 +273,29 @@ void levelOne(void)
         enemies[n]->cords.row = 4 * getHeight(enemies[n]);
     }
 }
-// TODO
-void levelTwo(void)
+char *reverseString(char *str)
 {
-}
-// TODO
-void levelThree(void)
-{
-}
-// TODO
-void levelFour(void)
-{
-}
-// TODO
-void levelFive(void)
-{
-}
-// TODO
-void levelSix(void)
-{
-}
-
-char *intToString(int num)
-{
-
-    if (num == 0)
+    int length = 0;
+    while (str[length] != 0)
     {
-        char *str = (char *)malloc(sizeof(char *) * 2);
-        str[0] = '0';
-        str[1] = 0;
-        return str;
+        length++;
     }
-    // int numIndecies = 2;
-    // int pow = 1;
-    // while (pow * 10 < num)
-    // {
-    //     pow *= 10;
-    //     numIndecies++;
-    // }
-    char *str = (char *)malloc(sizeof(char *) * 10);
-    int i = 0;
-    while (num > 0)
+    for (int i = 0, j = length - 1; i < j; i++, j--)
     {
-        str[i++] = num % 10 + '0';
+        char temp = str[i];
+        str[i] = str[j];
+        str[j] = temp;
+    }
+    return str;
+}
+char *intToString(int num, char *buffer)
+{
+    static int length = 5;
+    for (int i = 0; i < length && num != 0; i++)
+    {
+        buffer[i] = num % 10 + '0';
         num /= 10;
     }
 
-    char *res = (char *)malloc(sizeof(char *) * (i));
-    i--;
-    for (int n = 0, e = i; n < i; n++, e--)
-    {
-        res[n] = str[e];
-    }
-    free(str);
-    return res;
+    return reverseString(buffer);
 }

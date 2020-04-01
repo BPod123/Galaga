@@ -9,8 +9,8 @@
 #include "testing.h"
 #include "images/loseImage.h"
 void runStartState(void);
-void runNewLevelState(Game *game);
-void runPlayState(Game *game, u32 currentButtons, u32 previousButtons);
+void runNewLevelState(void);
+void runPlayState(u32 currentButtons, u32 previousButtons);
 void runLoseState(void);
 void runWinState(void);
 GBAState selectState(GBAState state, Game *game, u32 currentButtons, u32 previousButtons);
@@ -19,7 +19,7 @@ GBAState selectState(GBAState state, Game *game, u32 currentButtons, u32 previou
 int count = 0;
 // Changes with every iteration of main and is used to generate random numbers. The seed for this changes based on the value of count when the user takes certain actions
 int random = 0;
-Game *currGame;
+Game *game;
 GBAState state = START; //RUN_TEST;//START;
 int main(void)
 {
@@ -29,44 +29,45 @@ int main(void)
   // Save current and previous state of button input.
   u32 previousButtons = BUTTONS;
   u32 currentButtons = BUTTONS;
-  // ! Set Starting state
 
-  Game *game = malloc(sizeof(sizeof(Game)));
-  currGame = game;
   srand(count);
   random = rand();
   while (1)
   {
+    GBAState currState = state;
     count++;
     // This helps with randomizing the ships because it is bases on when the user does stuff, taking advantage of their unpredictability.
     srand(random);
     random = rand();
-   
+
     currentButtons = BUTTONS; // Load the current state of the buttons
 
     /* TODO: */
     // Manipulate the state machine below as needed //
     // NOTE: Call waitForVBlank() before you draw
-
     switch (state)
     {
     case START:
+      if (game)
+        free(game);
       runStartState();
       // state = ?
       break;
     case NEW_GAME:
+    {
+      game = (Game *)(calloc(1, sizeof(Game)));
       game->level = 1;
       game->score = 0;
       game->lives = NUM_LIVES;
+    }
     case NEW_LEVEL:
     {
-      runNewLevelState(game);
+      runNewLevelState();
       state = PLAY;
       continue;
     }
     case PLAY:
-      //runTest();
-      runPlayState(game, currentButtons, previousButtons);
+      runPlayState(currentButtons, previousButtons);
       break;
     case WIN:
       runWinState();
@@ -78,6 +79,8 @@ int main(void)
       runTest();
     }
     delay(DELAY_TIME);
+    if (currState != state)
+      continue;
     state = selectState(state, game, currentButtons, previousButtons);
     previousButtons = currentButtons; // Store the current state of the buttons
   }
@@ -92,10 +95,6 @@ GBAState selectState(GBAState state, Game *game, u32 currentButtons, u32 previou
   {
   case START:
   {
-    // if (KEY_DOWN_NOW(BUTTON_START)) {
-    //   while(KEY_DOWN_NOW(KEY_DOWN_NOW(BUTTON_START)));
-    //   return NEW_LEVEL;
-    // }
     if (KEY_DOWN(BUTTON_START, currentButtons) && !(KEY_DOWN(BUTTON_START, previousButtons)))
       return NEW_GAME;
     else
@@ -109,20 +108,31 @@ GBAState selectState(GBAState state, Game *game, u32 currentButtons, u32 previou
       return LOSE;
     else if (game->level == NUM_LEVELS + 1)
       return WIN;
-    else if (KEY_JUST_PRESSED(BUTTON_START, currentButtons, previousButtons))
+    else if (KEY_JUST_PRESSED(BUTTON_START, currentButtons, previousButtons)) {
       return START;
+      deconstructLevel();
+    }
     else
       return PLAY;
 
   case WIN:
-    if (KEY_JUST_PRESSED(BUTTON_START, currentButtons, previousButtons))
+    if (KEY_JUST_PRESSED(BUTTON_START, currentButtons, previousButtons)) {
+      deconstructLevel();
       return START;
+    }
+    else 
+    return WIN;
 
   case LOSE: // LOSE
-    if (KEY_JUST_PRESSED(BUTTON_START, currentButtons, previousButtons))
+    if (KEY_JUST_PRESSED(BUTTON_START, currentButtons, previousButtons)) {
+      deconstructLevel();
       return START;
+    }
     else
       return LOSE;
+
+  case NEW_GAME:
+    return NEW_LEVEL;
   default:
     return RUN_TEST;
   }
@@ -141,10 +151,17 @@ void runLoseState(void)
 {
   waitForVBlank();
   drawFullScreenImageDMA(LoseImage);
+  char *score = intToString(getGame()->score, (char *)calloc(5, sizeof(char)));
+  char *message = "Your score was ";
+  realloc(message, sizeof(score) / sizeof(char) + 1);
+  for (int i = 15, j = 0; (unsigned int)i < sizeof(score) / sizeof(char); i++, j++)
+    message[i] = score[j];
+  drawCenteredString((HEIGHT - 10) / 2, 0, WIDTH, 10, message, GREEN);
 }
-void runNewLevelState(Game *game)
+void runNewLevelState(void)
 {
-  makeLevel(game);
+  waitForVBlank();
+  makeLevel();
   drawLevel();
 }
 /** Delays the game
@@ -157,7 +174,7 @@ void delay(int delayTime)
 }
 Game *getGame(void)
 {
-  return currGame;
+  return game;
 }
 GBAState *getState(void)
 {

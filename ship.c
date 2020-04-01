@@ -41,6 +41,7 @@ const int SHIP_HEIGHT = PLAYERSHIP_UP_HEIGHT;
 ShipType getRandomEnemy(void)
 {
     int num = rand() % 4;
+    srand(rand());
     switch (num)
     {
     case 0:

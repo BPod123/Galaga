@@ -16,7 +16,7 @@ int playerRowIsh(int seed);
 void planRoute(Ship *ship, int seed)
 {
     free(ship->route.path);
-    ship->route.pathLength = 4;
+    ship->route.pathLength = 5;
     ship->route.path = (Cords *)calloc(sizeof(Cords), ship->route.pathLength);
     ship->route.currentStep = 0;
     srand(seed);
@@ -36,6 +36,8 @@ void planRoute(Ship *ship, int seed)
     }
     ship->route.path[3].row = playerRowIsh(seed);
     ship->route.path[3].col = playerColumnIsh(seed);
+    ship->route.path[4].col = playerColumnIsh(seed);
+    player->route.path[4].row = HEIGHT - getHeight(ship) - 1;
     // Check bounds for path
     for (int i = 0; i < ship->route.pathLength; i++)
     {

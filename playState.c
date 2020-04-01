@@ -9,29 +9,25 @@
 #include "stdlib.h"
 /** Excute movements for all of the enemies accourding to their Routes */
 void enemyMovements(void);
-// TODO: Handle firing missiles still
 void handlePlayerInput(u32 currentButtons, u32 previousButtons);
 void move(Ship *ship, Direction direction);
 int isValidMotion(Ship *ship, Direction direction);
 void handleCollisions(Game *game);
 void handleExplosion(Ship *ship);
-
-void showKillPlayer(void);
-// TODO
 void takeExtraLife(int life);
 void executeRoute(Ship *ship);
-/* // TODO Maybe
-void redrawAllShips(void);*/
 /**
  * High level control for playing the level
  * @param game The current game
  * @param currentButtons The most recently pressed buttons by the player
  * @param previousButtons the currenmt buttons from the previous loop in Game.main*/
-void runPlayState(Game *game, u32 currentButtons, u32 previousButtons)
+void runPlayState(u32 currentButtons, u32 previousButtons)
 {
+    Game *game = getGame();
     levelCounter++;
     int lives = game->lives;
     int level = game->level;
+    int score = game->score;
     waitForVBlank();
 
     // * Enemy Actions
@@ -50,6 +46,17 @@ void runPlayState(Game *game, u32 currentButtons, u32 previousButtons)
             executeRoute(missiles[i]);
     }
     handleCollisions(game);
+    // Update score
+    for (int i = 0; i < numEnemies; i++)
+    {
+        if (!enemies[i]->isActive && enemies[i]->route.activity != DEAD)
+        {
+            enemies[i]->route.activity = DEAD;
+            game->score += 10;
+        }
+    }
+    if (score != game->score)
+        drawSidePanel();
     if (lives > game->lives)
     {
         if (game->lives == 0)
@@ -57,8 +64,6 @@ void runPlayState(Game *game, u32 currentButtons, u32 previousButtons)
             *getState() = LOSE;
             return;
         }
-        // Player has died
-        //showKillPlayer();
         if (game->lives > 0)
         {
             takeExtraLife(game->lives);
@@ -66,8 +71,14 @@ void runPlayState(Game *game, u32 currentButtons, u32 previousButtons)
     }
     else if (level < game->level)
     {
+        if (game->level >= NUM_LEVELS)
+        *getState() = WIN;
+        else
         *getState() = NEW_LEVEL;
-        deconstructLevel();
+        // if (level > NUM_LEVELS)
+        //     *getState() = WIN;
+        // else
+        // return NEW_LEVEL;
     }
 }
 void enemyMovements(void)
@@ -142,7 +153,8 @@ void enemyMovements(void)
                     planRoute(enemies[attackIndex], seed);
                     enemies[i]->route.path[1].col = (GAME_WIDTH - getWidth(enemies[i])) % enemies[i]->route.path[0].col;
                     line++;
-                    if (line >= lineLength) {
+                    if (line >= lineLength)
+                    {
                         line = 0;
                         seed = rand();
                     }
@@ -154,7 +166,6 @@ void enemyMovements(void)
     }
 }
 /** Checks to see what collisions have taken place.
- * If an enemy ship is destroyed, will add to player score and set ship to explode
  * If the player is killed, will decrement the number of lives
  * @param game The current game 
  * */
@@ -186,12 +197,9 @@ void handleCollisions(Game *game)
         }
         if (enemies[i]->route.activity == EXPLODING)
         {
-            getGame()->score += 10;
             handleExplosion(enemies[i]);
             eraseShip(enemies[i]);
-            enemies[i]->route.activity = DEAD;
             enemies[i]->isActive = 0;
-            drawSidePanel(getGame());
         }
     }
 }
@@ -471,8 +479,6 @@ void executeRoute(Ship *ship)
         ship->isActive = 0;
         if (ship->shipType == PLAYER && getGame()->lives > 0)
             takeExtraLife(getGame()->lives);
-        else
-            ship->route.activity = DEAD;
         break;
     default:
         break;
