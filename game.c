@@ -62,6 +62,7 @@ int main(void)
       continue;
     }
     case PLAY:
+    //runTest();
       runPlayState(game, currentButtons, previousButtons);
       break;
     case WIN:

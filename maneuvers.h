@@ -7,17 +7,11 @@ typedef struct line {
     float m;
     float b;
 } Line;
-
+void flip(Ship *ship, int ccw, int index);
 // Go up to center, then target player
+void waterFallDown(Ship *ship, int index);
 void drawLine(Line line, int c1, int c2, u16 color);
 Line getLine(int r1, int c1, int r2, int c2);
 void planRoute(Ship *ship);
-void executeInstruction(Ship *ship);
-Direction getBestDirection(Cords c1, Cords c2);
-Direction combineDirections(Direction upDown, Direction leftRight);
-Direction getDirection(Cords *cords1, Cords *cords2, int isEnemy);
-Cords getSeparation(Cords c1, Cords c2);
-void moveCords(Cords *cords, Direction direction);
-int hasMoreInstructions(Ship *ship);
-Direction *getAdjacentDirections(Direction direction);
+
 #endif

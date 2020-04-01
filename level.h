@@ -18,7 +18,6 @@ typedef enum levelMode {
 extern Ship **enemies;
 extern Ship *player;
 extern Ship *missiles[MAX_MISSILES];
-extern Ship *floatTracker;
 extern int numEnemies;
 extern int numAttackers;
 extern int floatRadiusX;
@@ -27,4 +26,8 @@ void makeLevel(Game *game);
 void deconstructLevel(void);
 void drawLevel(void);
 void drawSidePanel(Game *game);
+
+Direction getRelativeDirection(Cords cords1, Cords cords2);
+Cords getSeparation(Cords c1, Cords c2);
+void moveCords(Cords *cords, Direction direction);
 #endif

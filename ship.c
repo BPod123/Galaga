@@ -72,7 +72,7 @@ ShipType getRandomEnemy(void)
  
 void drawShip(Ship *ship, Direction direction)
 {
-    drawImageDMA(ship->cords->row, ship->cords->col, getWidth(ship), getHeight(ship), getImage(ship, direction));
+    drawImageDMA(ship->cords.row, ship->cords.col, getWidth(ship), getHeight(ship), getImage(ship, direction));
 }
 /**
  * @param s1 Ship 1
@@ -80,8 +80,8 @@ void drawShip(Ship *ship, Direction direction)
  * @return 1 if they have overlaping pixels, 0 if not */
 int hasCollided(Ship *s1, Ship *s2)
 {
-    Cords *s1Cords = s1->cords;
-    Cords *s2Cords = s2->cords;
+    Cords *s1Cords = &s1->cords;
+    Cords *s2Cords = &s2->cords;
     if (s1Cords->col > s2Cords->col + getWidth(s2) || s1Cords->col + getWidth(s1) < s2Cords->col)
         return 0;
     
@@ -98,8 +98,8 @@ int hasCollided(Ship *s1, Ship *s2)
 void eraseShip(Ship *ship) {
         for (int r = 0; r < getHeight(ship); r++)
     {
-        DMA[3].src = &levelBackground[OFFSET(ship->cords->row + r, ship->cords->col, LEVELBACKGROUND_WIDTH)];
-        DMA[3].dst = &videoBuffer[OFFSET(ship->cords->row + r, ship->cords->col, WIDTH)];
+        DMA[3].src = &levelBackground[OFFSET(ship->cords.row + r, ship->cords.col, LEVELBACKGROUND_WIDTH)];
+        DMA[3].dst = &videoBuffer[OFFSET(ship->cords.row + r, ship->cords.col, WIDTH)];
         DMA[3].cnt = SHIP_WIDTH | DMA_ON | DMA_SOURCE_INCREMENT;
     }
 }
@@ -107,7 +107,7 @@ int getWidth(Ship *ship)
 {
     if (ship->shipType != MISSILE)
         return SHIP_WIDTH;
-    Direction d = *ship->direction;
+    Direction d = ship->direction;
     if (d == UP || d == DOWN)
         return MISSILE_UP_WIDTH;
     else if (d == LEFT || d == RIGHT)
@@ -121,7 +121,7 @@ int getHeight(Ship *ship)
 {
     if (ship->shipType != MISSILE)
         return SHIP_HEIGHT;
-    Direction d = *ship->direction;
+    Direction d = ship->direction;
     if (d == UP || d == DOWN)
         return MISSILE_UP_HEIGHT;
     else if (d == LEFT || d == RIGHT)
@@ -347,30 +347,4 @@ int overlap(int s1C1, int s1C2, int s2C1, int s2C2)
         return 1;
     else
         return 0;
-}
-Ship *constructShip(void) {
-    Ship *ship = malloc(sizeof(Ship));
-    ship->cords = malloc(sizeof(Cords));
-    ship->direction = malloc(sizeof(Direction));
-    return ship;
-}
-void deconstructShip(Ship *ship) {
-    free(ship->cords);
-    free(ship->direction);
-    for (int i = 0; i < ship->route.pathLength; i++) {
-        deconstructInstruction(ship->route.path[i]);
-    }
-}
-void deconstructInstruction(Instruction *instruction) {
-    if (instruction->gotoTarget) {
-        free(instruction->target);
-    }
-    else {
-        for (int i = 0; i < instruction->numDirections; i++) {
-            free(instruction->directions[i]);
-        }
-    }
-    if (instruction->hasNextPart) {
-        deconstructInstruction(instruction->nextPart);
-    }
 }
