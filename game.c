@@ -7,6 +7,7 @@
 #include "level.h"
 #include "images/titleScreen.h"
 #include "testing.h"
+#include "images/loseImage.h"
 void runStartState(void);
 void runNewLevelState(Game *game);
 void runPlayState(Game *game, u32 currentButtons, u32 previousButtons);
@@ -19,6 +20,7 @@ int count = 0;
 // Changes with every iteration of main and is used to generate random numbers. The seed for this changes based on the value of count when the user takes certain actions
 int random = 0;
 Game *currGame;
+GBAState state = START; //RUN_TEST;//START;
 int main(void)
 {
   /* TODO: */ // DONE
@@ -28,15 +30,18 @@ int main(void)
   u32 previousButtons = BUTTONS;
   u32 currentButtons = BUTTONS;
   // ! Set Starting state
-  GBAState state = START;//RUN_TEST;//START;
+
   Game *game = malloc(sizeof(sizeof(Game)));
   currGame = game;
   srand(count);
+  random = rand();
   while (1)
   {
     count++;
+    // This helps with randomizing the ships because it is bases on when the user does stuff, taking advantage of their unpredictability.
+    srand(random);
     random = rand();
-
+   
     currentButtons = BUTTONS; // Load the current state of the buttons
 
     /* TODO: */
@@ -50,19 +55,17 @@ int main(void)
       // state = ?
       break;
     case NEW_GAME:
-    game->level = 1;
-    game->score = 0;
-    game->lives = NUM_LIVES;
-    case NEW_LEVEL: {
-      // This helps with randomizing the ships because it is bases on when the user does stuff, taking advantage of their unpredictability.
-      srand(random);
-      random = rand();
+      game->level = 1;
+      game->score = 0;
+      game->lives = NUM_LIVES;
+    case NEW_LEVEL:
+    {
       runNewLevelState(game);
       state = PLAY;
       continue;
     }
     case PLAY:
-    //runTest();
+      //runTest();
       runPlayState(game, currentButtons, previousButtons);
       break;
     case WIN:
@@ -93,9 +96,10 @@ GBAState selectState(GBAState state, Game *game, u32 currentButtons, u32 previou
     //   while(KEY_DOWN_NOW(KEY_DOWN_NOW(BUTTON_START)));
     //   return NEW_LEVEL;
     // }
-    if (KEY_DOWN(BUTTON_START, currentButtons) && ! (KEY_DOWN(BUTTON_START,previousButtons)))
+    if (KEY_DOWN(BUTTON_START, currentButtons) && !(KEY_DOWN(BUTTON_START, previousButtons)))
       return NEW_GAME;
-    else return START;
+    else
+      return START;
   }
   case NEW_LEVEL:
     return PLAY;
@@ -131,16 +135,12 @@ void runStartState(void)
 void runWinState(void)
 {
   waitForVBlank();
-  drawImageDMA(0, 0, GAME_WIDTH, HEIGHT, winImage);
+  drawFullScreenImageDMA(winImage);
 }
 void runLoseState(void)
 {
   waitForVBlank();
-  drawRectDMA(0, 0, GAME_WIDTH, HEIGHT, BLACK);
-  drawString(0, 0, "You died. The aliens recovered your corpse in space to do experiments,", WHITE);
-  drawString(10, 0, "but unknowingly contracted the coronavirus from you. They spread it to their civilization", WHITE);
-  drawString(20, 0, "and to all other life in the universe which eventually sucumbed to it. Trillions died", WHITE);
-  drawString(30, 0, "and it was all because you couldn't destroy a few unarmed ships.", WHITE);
+  drawFullScreenImageDMA(LoseImage);
 }
 void runNewLevelState(Game *game)
 {
@@ -155,6 +155,11 @@ void delay(int delayTime)
   for (int i = 0; i < delayTime * 8000; i++)
     x++;
 }
-Game *getGame(void) {
+Game *getGame(void)
+{
   return currGame;
+}
+GBAState *getState(void)
+{
+  return &state;
 }

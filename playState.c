@@ -6,6 +6,7 @@
 #include "images/explosionBig.h"
 #include "images/explosionPlayer.h"
 #include "maneuvers.h"
+#include "stdlib.h"
 /** Excute movements for all of the enemies accourding to their Routes */
 void enemyMovements(void);
 // TODO: Handle firing missiles still
@@ -19,7 +20,6 @@ void showKillPlayer(void);
 // TODO
 void takeExtraLife(int life);
 void executeRoute(Ship *ship);
-void planRoute(Ship *enemy);
 /* // TODO Maybe
 void redrawAllShips(void);*/
 /**
@@ -31,11 +31,13 @@ void runPlayState(Game *game, u32 currentButtons, u32 previousButtons)
 {
     levelCounter++;
     int lives = game->lives;
+    int level = game->level;
     waitForVBlank();
+
     // * Enemy Actions
     enemyMovements();
     // * Player Actions
-    if (player->isActive)
+    if (player->route.activity == CONTROLLING)
         handlePlayerInput(currentButtons, previousButtons);
     else
     {
@@ -50,12 +52,22 @@ void runPlayState(Game *game, u32 currentButtons, u32 previousButtons)
     handleCollisions(game);
     if (lives > game->lives)
     {
+        if (game->lives == 0)
+        {
+            *getState() = LOSE;
+            return;
+        }
         // Player has died
-        showKillPlayer();
+        //showKillPlayer();
         if (game->lives > 0)
         {
             takeExtraLife(game->lives);
         }
+    }
+    else if (level < game->level)
+    {
+        *getState() = NEW_LEVEL;
+        deconstructLevel();
     }
 }
 void enemyMovements(void)
@@ -63,13 +75,15 @@ void enemyMovements(void)
     int activeEnemies = 0;
     int attackingEnemies = 0;
     int floatingEnemies = 0;
-    static int attackIndex = 0;
-    if (attackIndex >= numEnemies)
-        attackIndex = 0;
     for (int i = 0; i < numEnemies; i++)
     {
         if (!enemies[i]->isActive)
             continue;
+        if (player->route.activity != CONTROLLING)
+        {
+            enemies[i]->route.currentStep = enemies[i]->route.pathLength;
+        }
+
         activeEnemies++;
         // Shift enemy homes
         int mod = levelCounter % (floatRadiusX * 2);
@@ -93,9 +107,18 @@ void enemyMovements(void)
             continue;
         }
     }
-    if (attackingEnemies == 0 && floatingEnemies > 0) // TODO Implement getting new attackers later
+    if (activeEnemies == 0 && getGame()->lives > 0)
     {
-        for (int i = 0; i < numEnemies; i++)
+        getGame()->level++;
+        return;
+    }
+    if (attackingEnemies == 0 && floatingEnemies > 0 && player->route.activity == CONTROLLING)
+    {
+        // Do lines or not
+        srand(random);
+        int lineLength = rand() % numAttackers;
+        int attackIndex = rand() % numAttackers;
+        for (int i = 0, a = 0, line = 0, seed = rand(); i < numEnemies && a < numAttackers && a < floatingEnemies; i++)
         {
             if (!enemies[attackIndex]->isActive || enemies[attackIndex]->route.activity != FLOATING)
             {
@@ -107,10 +130,25 @@ void enemyMovements(void)
             }
             else
             {
-                enemies[attackIndex]->route.activity = ATTACKRUN;
-                planRoute(enemies[attackIndex]);
-                executeRoute(enemies[attackIndex++]);
-                break;
+                if (enemies[attackIndex]->cords.row != enemies[attackIndex]->home.row)
+                {
+                    floatingEnemies--;
+                    continue;
+                }
+                else
+                {
+                    a++;
+                    enemies[attackIndex]->route.activity = ATTACKRUN;
+                    planRoute(enemies[attackIndex], seed);
+                    enemies[i]->route.path[1].col = (GAME_WIDTH - getWidth(enemies[i])) % enemies[i]->route.path[0].col;
+                    line++;
+                    if (line >= lineLength) {
+                        line = 0;
+                        seed = rand();
+                    }
+
+                    executeRoute(enemies[attackIndex++]);
+                }
             }
         }
     }
@@ -137,25 +175,23 @@ void handleCollisions(Game *game)
                 eraseShip(missiles[m]);
                 missiles[m]->isActive = 0;
                 enemies[i]->route.activity = EXPLODING;
-                game->score += 10;
-                drawSidePanel(game);
                 break;
             }
         }
         if (hasCollided(enemies[i], player))
         {
+            move(enemies[i], UP);
             enemies[i]->route.activity = EXPLODING;
             player->route.activity = EXPLODING;
-            game->score += 10;
-            drawSidePanel(game);
         }
         if (enemies[i]->route.activity == EXPLODING)
-            handleExplosion(enemies[i]);
-        if (player->route.activity == EXPLODING)
         {
-            handleExplosion(player);
-            waitForVBlank();
-            drawSidePanel(game);
+            getGame()->score += 10;
+            handleExplosion(enemies[i]);
+            eraseShip(enemies[i]);
+            enemies[i]->route.activity = DEAD;
+            enemies[i]->isActive = 0;
+            drawSidePanel(getGame());
         }
     }
 }
@@ -222,28 +258,41 @@ void move(Ship *ship, Direction direction)
             ship->cords.row--;
             break;
         case DL:
-            // ship->cords.col--;
-            // ship->cords.row++;
-            move(ship, LEFT); // Move to the sides first, so it doesn't move on the player's row
-            direction = LEFT;
-            break;
-        case DR:
-            // ship->cords.col++;
-            // ship->cords.row++;
-            move(ship, RIGHT); // Move to the sides first, so it doesn't move on the player's row
-            direction = RIGHT;
-            break;
-        default:
-            return;
-        }
-            if (ship->shipType == PLAYER || (ship->route.activity == FLOATING && ship->cords.row == ship->home.row))
+            if (ship->shipType != PLAYER && ship->shipType != MISSILE && ship->cords.row > player->cords.row + getHeight(player))
             {
-            drawShip(ship, UP);
+                move(ship, LEFT); // Move to the sides first, so it doesn't move on the player's row
+                direction = LEFT;
             }
             else
             {
-            drawShip(ship, direction);
+                ship->cords.col--;
+                ship->cords.row++;
             }
+
+            break;
+        case DR:
+            if (ship->shipType != PLAYER && ship->shipType != MISSILE && ship->cords.row > player->cords.row + getHeight(player))
+            {
+                move(ship, RIGHT); // Move to the sides first, so it doesn't move on the player's row
+                direction = RIGHT;
+            }
+            else
+            {
+                ship->cords.col++;
+                ship->cords.row++;
+            }
+            break;
+        default: // NEUTRAL
+            return;
+        }
+        if (ship->shipType == PLAYER || (ship->route.activity == FLOATING && ship->cords.row == ship->home.row))
+        {
+            drawShip(ship, UP);
+        }
+        else
+        {
+            drawShip(ship, direction);
+        }
         ship->direction = direction;
     }
 }
@@ -277,69 +326,45 @@ int isValidMotion(Ship *ship, Direction direction)
 }
 void takeExtraLife(int life)
 {
+    player->route.activity = RETURNING_HOME;
     // Get all living enemy ships back to their home position
-    // TODO: Change this from teleporting them to letting them finish their routes
     for (int i = 0; i < numEnemies; i++)
     {
-        if (enemies[i]->isActive)
-        {
-            // * Edge Case: The player dies while enemy is exploding
-            if (enemies[i]->route.exploding > 0)
-            {
-                eraseShip(enemies[i]);
-                enemies[i]->isActive = 0;
-                continue;
-            }
-            // Send enemies that are on attack run back home
-            if (enemies[i]->route.activity == ATTACKRUN)
-            {
-                eraseShip(enemies[i]);
-                enemies[i]->cords.col = enemies[i]->route.path[ROUTE_COMPLEXITY - 1].col;
-                enemies[i]->cords.row = enemies[i]->route.path[ROUTE_COMPLEXITY - 1].row;
-                enemies[i]->route.currentStep = ROUTE_COMPLEXITY;
-                waitForVBlank();
-                drawShip(enemies[i], UP);
-            }
-        }
+        if (!enemies[i]->isActive)
+            continue;
+        enemies[i]->route.activity = FLOATING;
     }
-
-    // TODO: Move player to start position
-    player->cords.col = EXTRA_LIFE_COL(life);
+    player->cords.col = EXTRA_LIFE_COL(life - 1);
     player->cords.row = EXTRA_LIFE_ROW;
-    player->isActive = 0; // ! Set to 1 once player is in start position
-    // * Route player to starting position
-    player->route.path[ROUTE_COMPLEXITY - 1].col = PLAYER_START_COL;
-    player->route.path[ROUTE_COMPLEXITY - 1].row = PLAYER_START_ROW;
-    player->route.currentStep = ROUTE_COMPLEXITY;
 }
-/** Stops the normal flow of the game, and shows the player exploding */
-void showKillPlayer(void)
-{
-    delay(DELAY_TIME * 3);
-    waitForVBlank();
-    drawImageDMA(player->cords.row, player->cords.col, getWidth(player), getHeight(player), explosion);
+// /** Stops the normal flow of the game, and shows the player exploding */
+// void showKillPlayer(void)
+// {
+//     delay(DELAY_TIME * 3);
+//     waitForVBlank();
+//     drawImageDMA(player->cords.row, player->cords.col, getWidth(player), getHeight(player), explosion);
 
-    delay(DELAY_TIME * 2);
-    waitForVBlank();
-    drawImageDMA(player->cords.row, player->cords.col, getWidth(player), getHeight(player), explosionBig);
+//     delay(DELAY_TIME * 2);
+//     waitForVBlank();
+//     drawImageDMA(player->cords.row, player->cords.col, getWidth(player), getHeight(player), explosionBig);
 
-    delay(DELAY_TIME * 2);
-    waitForVBlank();
-    drawImageDMA(player->cords.row, player->cords.col, getWidth(player), getHeight(player), explosion);
+//     delay(DELAY_TIME * 2);
+//     waitForVBlank();
+//     drawImageDMA(player->cords.row, player->cords.col, getWidth(player), getHeight(player), explosion);
 
-    delay(DELAY_TIME * 2);
-    waitForVBlank();
-    drawImageDMA(player->cords.row, player->cords.col, getWidth(player), getHeight(player), explosionBig);
+//     delay(DELAY_TIME * 2);
+//     waitForVBlank();
+//     drawImageDMA(player->cords.row, player->cords.col, getWidth(player), getHeight(player), explosionBig);
 
-    delay(DELAY_TIME * 2);
-    waitForVBlank();
-    drawImageDMA(player->cords.row, player->cords.col, getWidth(player), getHeight(player), explosionPlayer);
+//     delay(DELAY_TIME * 2);
+//     waitForVBlank();
+//     drawImageDMA(player->cords.row, player->cords.col, getWidth(player), getHeight(player), explosionPlayer);
 
-    delay(DELAY_TIME);
-    waitForVBlank();
-    eraseShip(player);
-    delay(DELAY_TIME);
-}
+//     delay(DELAY_TIME);
+//     waitForVBlank();
+//     eraseShip(player);
+//     delay(DELAY_TIME);
+// }
 /**
  * Moves ship in the direction of its current target
  *
@@ -380,24 +405,28 @@ void executeRoute(Ship *ship)
             }
             if (ship->route.currentStep == ship->route.pathLength)
             {
-                ship->route.activity = RETRUNING_HOME;
+                ship->route.activity = RETURNING_HOME;
             }
             executeRoute(ship);
             return;
         }
         else
         {
-            move(ship, getRelativeDirection(ship->cords, ship->route.path[ship->route.currentStep]));
+            Direction direction = getRelativeDirection(ship->cords, ship->route.path[ship->route.currentStep]);
+            if (isValidMotion(ship, direction))
+                move(ship, direction);
+            else
+                ship->route.activity = FLOATING;
         }
         break;
-    case RETRUNING_HOME:
+    case RETURNING_HOME:
     {
         if (ship->shipType != PLAYER && ship->shipType != MISSILE)
         {
             // ship->route.activity = FLOATING;
             // executeRoute(ship);
             // if (!CORDS_EQUAL(ship->cords, ship->home))
-            //     ship->route.activity = RETRUNING_HOME;
+            //     ship->route.activity = RETURNING_HOME;
             ship->route.activity = FLOATING;
             executeRoute(ship);
             return;
@@ -419,7 +448,6 @@ void executeRoute(Ship *ship)
         {
             if (ship->shipType == PLAYER)
             {
-                ship->isActive = 1;
                 ship->route.activity = CONTROLLING;
                 return;
             }
@@ -435,85 +463,19 @@ void executeRoute(Ship *ship)
         {
             move(ship, direction);
         }
-        // else
-        // {
 
-        //     // Ship is an enemy
-        //     // Get in line with floaters
-        //     int floatIndex = -1;
-        //     for (int i = 0; i < numEnemies; i++)
-        //     {
-        //         if (!enemies[i]->isActive || enemies[i]->route.activity != FLOATING)
-        //             continue;
-        //         else
-        //         {
-        //             floatIndex = i;
-        //             break;
-        //         }
-        //     }
-        //     if (floatIndex == -1)
-        //     {
-        //         // it is the only enemy left
-        //         ship->home.col = (GAME_WIDTH - getWidth(ship)) / 2;
-        //         floatRadiusX = ship->home.col < (GAME_WIDTH - getWidth(ship) - ship->home.col) ? ship->home.col : (GAME_WIDTH - getWidth(ship) - ship->home.col);
-        //         direction = getRelativeDirection(ship->cords, ship->home);
-        //         if (direction == NEUTRAL)
-        //         {
-        //             ship->route.activity = FLOATING;
-        //             executeRoute(ship);
-        //         }
-        //         else
-        //         {
-        //             move(ship, direction);
-        //         }
-        //     }
-        //     Cords separation = getSeparation(enemies[floatIndex]->cords, enemies[floatIndex]->home);
-        //     Cords targetCords;
-        //     targetCords.col = ship->home.col + separation.col;
-        //     targetCords.row = ship->home.row + separation.row;
-        //     Direction direction = getRelativeDirection(ship->cords, targetCords);
-        //     if (direction == NEUTRAL)
-        //     {
-        //         ship->route.activity = FLOATING;
-        //         return;
-        //     }
-        //     move(ship, direction);
-        //     direction = getRelativeDirection(ship->cords, targetCords);
-        //     if (direction == NEUTRAL)
-        //     {
-        //         ship->route.activity = FLOATING;
-        //     }
-        //     return;
-        //}
         break;
     }
     case EXPLODING:
-        if (ship->route.exploding > EXPLOSION_FRAMES || (ship->shipType != PLAYER && ship->route.exploding >= EXPLOSION_FRAMES))
-        {
-            ship->route.exploding = 0;
-            eraseShip(ship);
-            ship->isActive = 0;
-            return;
-        }
-        if (ship->route.exploding == EXPLOSION_FRAMES && ship->shipType == PLAYER)
-        {
-            drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSIONPLAYER_WIDTH, EXPLOSIONPLAYER_HEIGHT, explosionPlayer);
-        }
+        handleExplosion(ship);
+        ship->isActive = 0;
+        if (ship->shipType == PLAYER && getGame()->lives > 0)
+            takeExtraLife(getGame()->lives);
         else
-        {
-            if (ship->route.exploding % 2 == 0)
-            {
-                drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSIONBIG_WIDTH, EXPLOSIONBIG_HEIGHT, explosionBig);
-            }
-            else
-            {
-                drawImageDMA(ship->cords.row, ship->cords.col, EXPLOSION_WIDTH, EXPLOSION_HEIGHT, explosion);
-            }
-        }
-        ship->route.exploding++;
+            ship->route.activity = DEAD;
         break;
-    default: // Should never come to this
-        return;
+    default:
+        break;
     }
 }
 void handleExplosion(Ship *ship)

@@ -35,6 +35,7 @@ void makeLevel(Game *gameIn)
     // * Place Player
     player = malloc(sizeof(Ship));
     player->shipType = PLAYER;
+    player->route.activity = CONTROLLING;
     player->cords.col = PLAYER_START_COL;
     player->cords.row = PLAYER_START_ROW;
     player->isActive = 1;
@@ -46,7 +47,7 @@ void makeLevel(Game *gameIn)
     {
         missiles[i] = malloc(sizeof(Ship));
         missiles[i]->shipType = MISSILE;
-        missiles[i]->route.activity = RETRUNING_HOME;
+        missiles[i]->route.activity = RETURNING_HOME;
         missiles[i]->isActive = 0;
     }
     // * Set Up Enemies
@@ -98,6 +99,7 @@ void deconstructLevel(void)
     for (int i = 0; i < numEnemies; i++)
     {
         free(enemies[i]->route.path);
+        free(enemies[i]);
     }
 }
 

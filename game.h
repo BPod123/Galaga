@@ -49,8 +49,9 @@ typedef enum shipActivity {
         FLOATING, // Floating around its home
         ATTACKRUN, // Doing and attack run
         CONTROLLING, // Player Control
-        RETRUNING_HOME, // For ships after attack run and player when getting new life and missiles
-        EXPLODING
+        RETURNING_HOME, // For ships after attack run and player when getting new life and missiles
+        EXPLODING, 
+        DEAD
 } Activity;
 /** This is everything having to do with a ships actions */
 typedef struct route {
@@ -77,4 +78,5 @@ extern int random;
 
 void delay(int delayTime);
 Game *getGame(void);
+GBAState *getState(void);
 #endif
