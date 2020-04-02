@@ -110,14 +110,14 @@ GBAState selectState(GBAState state, Game *game, u32 currentButtons, u32 previou
       return WIN;
     else if (KEY_JUST_PRESSED(BUTTON_START, currentButtons, previousButtons)) {
       return START;
-      deconstructLevel();
+      //deconstructLevel();
     }
     else
       return PLAY;
 
   case WIN:
     if (KEY_JUST_PRESSED(BUTTON_START, currentButtons, previousButtons)) {
-      deconstructLevel();
+      //deconstructLevel();
       return START;
     }
     else 
@@ -125,7 +125,7 @@ GBAState selectState(GBAState state, Game *game, u32 currentButtons, u32 previou
 
   case LOSE: // LOSE
     if (KEY_JUST_PRESSED(BUTTON_START, currentButtons, previousButtons)) {
-      deconstructLevel();
+      //deconstructLevel();
       return START;
     }
     else
@@ -141,6 +141,7 @@ void runStartState(void)
 {
   waitForVBlank();
   drawFullScreenImageDMA(titleScreen);
+  getGame()->level = 1;
 }
 void runWinState(void)
 {

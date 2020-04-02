@@ -127,6 +127,8 @@ void enemyMovements(void)
     {
         // Do lines or not
         srand(random);
+        random = rand();
+        srand(random);
         int lineLength = rand() % numAttackers;
         int attackIndex = rand() % numAttackers;
         for (int i = 0, a = 0, line = 0, seed = rand(); i < numEnemies && a < numAttackers && a < floatingEnemies; i++)

@@ -112,11 +112,8 @@ void drawSidePanel(void)
 {
     Game *game = getGame();
     drawRectDMA(0, GAME_WIDTH, WIDTH - GAME_WIDTH, HEIGHT, BLACK);
-    char lev[2];
-    lev[0] = game->level + 48;
-    lev[1] = ' ';
     drawCenteredString(20, GAME_WIDTH, 40, 10, "Level", WHITE);
-    drawCenteredString(30, GAME_WIDTH + 7, 33, 20, &lev[0], RED);
+    drawCenteredString(30, GAME_WIDTH + 7, 33, 20, "1 ", RED);
     drawCenteredString(50, GAME_WIDTH, 40, 10, "Score", WHITE);
     char *score = calloc(2, sizeof(char));
     if (game->score == 0)

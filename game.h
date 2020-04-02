@@ -5,10 +5,10 @@
 // * This is where all the settings for the game are defined. In one place
 // The number of steps in a route
 #define POINTS_PER_KILL 100
-#define NUM_LEVELS 6
+#define NUM_LEVELS 1
 #define NUM_LIVES 3
 #define MAX_ENEMIES 30
-#define MAX_MISSILES 20
+#define MAX_MISSILES 5
 #define DELAY_TIME 1 //2
 #define ROUTE_COMPLEXITY 10
 #define EXPLOSION_FRAMES 4
